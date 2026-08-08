@@ -1,0 +1,149 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from client.rdaccess.braille import (
+    CONNECTION_XON,
+    PROTOCOL_VERSION_2_LEGACY,
+    BrailleProtocolSession,
+)
+
+FIXTURES = (
+    Path(__file__).parent / "fixtures" / "rdaccess-v2-2da84e8496519cf23614c0cfb3ace61ee0f9cd95"
+)
+
+
+def fixture_bytes(name: str) -> bytes:
+    return bytes.fromhex((FIXTURES / name).read_text())
+
+
+def test_real_braille_legacy_protocol_version_is_answered() -> None:
+    sent: list[bytes] = []
+    session = BrailleProtocolSession(send=sent.append)
+    session.connect()
+    session.feed(fixture_bytes("braille-server-protocol-version-v1.hex"))
+    assert sent == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY]
+
+
+def test_braille_dimensions_are_advertised_in_json_mode() -> None:
+    sent: list[bytes] = []
+    session = BrailleProtocolSession(send=sent.append, num_cells=40, num_rows=1)
+    session.connect()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    for attribute in ("numCells", "numRows", "numCols"):
+        session.feed(
+            json.dumps({"attribute": attribute, "type": "attribute_request"}).encode() + b"\n"
+        )
+    assert sent[:2] == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY]
+    assert [json.loads(payload) for payload in sent[2:]] == [
+        {"attribute": "numCells", "value": 40, "type": "attribute_value"},
+        {"attribute": "numRows", "value": 1, "type": "attribute_value"},
+        {"attribute": "numCols", "value": 40, "type": "attribute_value"},
+    ]
+
+
+def test_real_legacy_requests_during_json_transition_are_answered() -> None:
+    sent: list[bytes] = []
+    session = BrailleProtocolSession(send=sent.append, num_cells=40, num_rows=1)
+    session.connect()
+    session.feed(fixture_bytes("braille-server-protocol-version-v1.hex"))
+    session.feed(fixture_bytes("braille-server-num-rows-request-v1.hex")[:7])
+    session.feed(fixture_bytes("braille-server-num-rows-request-v1.hex")[7:])
+    session.feed(fixture_bytes("braille-server-num-cols-request-v1.hex"))
+    session.feed(b'{"version":2,"channel":"NVDA-BRAILLE","type":"protocol_version"}\n')
+    assert sent[:2] == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY]
+    assert [json.loads(payload) for payload in sent[2:]] == [
+        {"attribute": "numRows", "value": 1, "type": "attribute_value"},
+        {"attribute": "numCols", "value": 40, "type": "attribute_value"},
+    ]
+
+
+def test_reconnect_recovers_when_server_sends_attribute_before_version() -> None:
+    sent: list[bytes] = []
+    session = BrailleProtocolSession(send=sent.append, num_cells=40, num_rows=1)
+    session.connect()
+
+    session.feed(fixture_bytes("braille-server-num-rows-request-v1.hex"))
+
+    assert sent[:2] == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY]
+    assert json.loads(sent[2]) == {
+        "attribute": "numRows",
+        "value": 1,
+        "type": "attribute_value",
+    }
+
+
+def test_fragmented_braille_display_is_logged(caplog) -> None:
+    caplog.set_level("INFO")
+    session = BrailleProtocolSession()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    session.feed(b'{"type":"display","cells":[1,')
+    session.feed(b"2,255]}\n")
+    assert "braille display 3 cells: 01 02 ff" in caplog.text
+
+
+def test_real_first_braille_display_has_40_cells(caplog) -> None:
+    caplog.set_level("INFO")
+    session = BrailleProtocolSession()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    session.feed(fixture_bytes("first-braille-display-v2-jsonl.hex"))
+    assert "braille display 40 cells: 43 25 17 11 01 25" in caplog.text
+
+
+def test_invalid_braille_cells_are_rejected(caplog) -> None:
+    session = BrailleProtocolSession()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    session.feed(b'{"type":"display","cells":[1,true,256]}\n')
+    assert "invalid braille display cells" in caplog.text
+
+
+def test_real_display_is_forwarded_to_output() -> None:
+    class FakeOutput:
+        num_cells = 40
+        num_rows = 1
+
+        def __init__(self) -> None:
+            self.displays: list[list[int]] = []
+
+        def display(self, cells: list[int]) -> None:
+            self.displays.append(cells)
+
+    output = FakeOutput()
+    session = BrailleProtocolSession(output=output)
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    session.feed(fixture_bytes("first-braille-display-v2-jsonl.hex"))
+    assert len(output.displays) == 1
+    assert len(output.displays[0]) == 40
+    assert output.displays[0][:6] == [67, 37, 23, 17, 1, 37]
+
+
+def test_gesture_map_is_not_fabricated(caplog) -> None:
+    caplog.set_level("INFO")
+    sent: list[bytes] = []
+    session = BrailleProtocolSession(send=sent.append)
+    session.connect()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    session.feed(b'{"attribute":"gestureMap","type":"attribute_request"}\n')
+    assert sent == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY]
+    assert "ignoring gestureMap request" in caplog.text
+
+
+def test_braille_reconnect_sends_xon_and_resets_partial_json() -> None:
+    sent: list[bytes] = []
+    session = BrailleProtocolSession(send=sent.append)
+    session.connect()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    session.feed(b'{"type":"display","cells":[1')
+    session.disconnect()
+
+    session.connect()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    session.feed(b'{"type":"display","cells":[2]}\n')
+
+    assert sent == [
+        CONNECTION_XON,
+        PROTOCOL_VERSION_2_LEGACY,
+        CONNECTION_XON,
+        PROTOCOL_VERSION_2_LEGACY,
+    ]

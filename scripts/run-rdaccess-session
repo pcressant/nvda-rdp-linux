@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+cd "$project_dir"
+mkdir -p logs
+
+: "${RDP_HOST:?Set RDP_HOST to the Windows RDP host}"
+: "${RDP_USER:?Set RDP_USER to the Windows account name}"
+RDP_DOMAIN=${RDP_DOMAIN:-}
+export RDP_HOST RDP_USER RDP_DOMAIN
+
+set +e
+nix develop --command bash -c '
+  set -o pipefail
+  rdp_target=("/v:$RDP_HOST" "/u:$RDP_USER")
+  if [[ -n "$RDP_DOMAIN" ]]; then
+    rdp_target+=("/d:$RDP_DOMAIN")
+  fi
+  stdbuf -oL -eL xfreerdp \
+    "${rdp_target[@]}" \
+    /dvc:nvda-rdp-dvc \
+    /from-stdin:force \
+    /cert:tofu \
+    /sound:sys:pulse \
+    /kbd:layout:0x0000040C \
+    +f \
+    +grab-keyboard \
+    /log-level:INFO \
+    /log-filters:com.freerdp.channels.drdynvc.client:TRACE \
+    2>&1 | tee logs/rdaccess-session.log
+  exit "${PIPESTATUS[0]}"
+'
+status=$?
+set -e
+
+printf '\nFreeRDP s’est arrêté avec le code %d. Appuyez sur Entrée pour fermer.\n' "$status"
+read -r
+exit "$status"

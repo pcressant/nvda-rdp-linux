@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+cd "$project_dir"
+mkdir -p logs
+
+: "${RDP_HOST:?Set RDP_HOST to the Windows RDP host}"
+: "${RDP_USER:?Set RDP_USER to the Windows account name}"
+RDP_DOMAIN=${RDP_DOMAIN:-}
+export RDP_HOST RDP_USER RDP_DOMAIN
+
+set +e
+nix develop --command bash -c '
+  set -euo pipefail
+
+  socket_path=${NVDA_RDP_SOCKET:-"$XDG_RUNTIME_DIR/nvda-rdp-linux/speech.sock"}
+  braille_socket_path=${NVDA_RDP_BRAILLE_SOCKET:-"$XDG_RUNTIME_DIR/nvda-rdp-linux/braille.sock"}
+  python -m client.main > logs/rdaccess-client.log 2>&1 &
+  client_pid=$!
+  python -m client.braille_main --brlapi > logs/rdaccess-braille.log 2>&1 &
+  braille_client_pid=$!
+
+  cleanup() {
+    kill -TERM "$client_pid" 2>/dev/null || true
+    kill -TERM "$braille_client_pid" 2>/dev/null || true
+    wait "$client_pid" 2>/dev/null || true
+    wait "$braille_client_pid" 2>/dev/null || true
+  }
+  trap cleanup EXIT
+
+  for _attempt in $(seq 1 50); do
+    if [[ -S "$socket_path" ]]; then
+      break
+    fi
+    if ! kill -0 "$client_pid" 2>/dev/null; then
+      echo "Le client RDAccess s’est arrêté avant de créer $socket_path" >&2
+      exit 1
+    fi
+    sleep 0.1
+  done
+  if [[ ! -S "$socket_path" ]]; then
+    echo "Le socket RDAccess n’a pas été créé: $socket_path" >&2
+    exit 1
+  fi
+  for _attempt in $(seq 1 50); do
+    if [[ -S "$braille_socket_path" ]]; then
+      break
+    fi
+    if ! kill -0 "$braille_client_pid" 2>/dev/null; then
+      echo "Le client braille s’est arrêté avant de créer $braille_socket_path" >&2
+      exit 1
+    fi
+    sleep 0.1
+  done
+  if [[ ! -S "$braille_socket_path" ]]; then
+    echo "Le socket braille n’a pas été créé: $braille_socket_path" >&2
+    exit 1
+  fi
+
+  read -r -s -p "Mot de passe RDP: " rdp_password
+  printf "\n"
+
+  rdp_target=("/v:$RDP_HOST" "/u:$RDP_USER")
+  if [[ -n "$RDP_DOMAIN" ]]; then
+    rdp_target+=("/d:$RDP_DOMAIN")
+  fi
+
+  set +e
+  printf "%s\n" "$rdp_password" | stdbuf -oL -eL xfreerdp \
+    "${rdp_target[@]}" \
+    /dvc:nvda-rdp-dvc \
+    /from-stdin:force \
+    /cert:tofu \
+    /sound:sys:pulse \
+    /kbd:layout:0x0000040C \
+    +f \
+    +grab-keyboard \
+    /log-level:INFO \
+    /log-filters:com.freerdp.channels.drdynvc.client:TRACE \
+    > logs/rdaccess-speech-session.log 2>&1
+  status=${PIPESTATUS[1]}
+  unset rdp_password
+  set -e
+  exit "$status"
+'
+status=$?
+set -e
+
+printf '\nLe test s’est arrêté avec le code %d. Appuyez sur Entrée pour fermer.\n' "$status"
+read -r
+exit "$status"

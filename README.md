@@ -5,7 +5,7 @@ braille produced by NVDA/RDAccess in a Windows RDP session through FreeRDP and
 handles them locally with Speech Dispatcher and BRLTTY.
 
 The project keeps the FreeRDP DVC plugin limited to raw transport. RDAccess
-protocol handling and local output live in separate Python processes.
+protocol handling and local output live in a separate Python process.
 
 This is a proof of concept, not a finished production solution. Speech and
 braille output were tested in real sessions against RDAccess 2.0.0 (commit

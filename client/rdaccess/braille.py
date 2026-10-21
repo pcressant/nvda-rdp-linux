@@ -40,6 +40,13 @@ ATTRIBUTE_NUM_ROWS = "numRows"
 ATTRIBUTE_GESTURE_MAP = "gestureMap"
 
 
+def _check_dimensions(num_cells: int, num_rows: int) -> None:
+    if num_cells <= 0 or num_cells > 255:
+        raise ValueError("num_cells must be between 1 and 255")
+    if num_rows <= 0 or num_cells % num_rows:
+        raise ValueError("num_rows must divide num_cells")
+
+
 class BrailleOutput:
     num_cells: int
     num_rows: int
@@ -88,17 +95,25 @@ class BrailleProtocolSession(RdAccessSession):
             request_versions=request_versions,
             on_caps_lock_toggle=on_caps_lock_toggle,
         )
-        if output is not None:
-            num_cells = output.num_cells
-            num_rows = output.num_rows
-        if num_cells <= 0 or num_cells > 255:
-            raise ValueError("num_cells must be between 1 and 255")
-        if num_rows <= 0 or num_cells % num_rows:
-            raise ValueError("num_rows must divide num_cells")
+        if output is None:
+            _check_dimensions(num_cells, num_rows)
         self._output = output
         self._num_cells = num_cells
         self._num_rows = num_rows
         self._gesture_map = gesture_map
+
+    def _dimensions(self) -> tuple[int, int]:
+        """Current (cells, rows); read from the output, whose size may change."""
+        if self._output is None:
+            return self._num_cells, self._num_rows
+        return self._output.num_cells, self._output.num_rows
+
+    def push_dimensions(self) -> None:
+        """Announce a new display size, like ``_handleDisplayDimensionChanges``."""
+        for attribute in (ATTRIBUTE_NUM_CELLS, ATTRIBUTE_NUM_COLS, ATTRIBUTE_NUM_ROWS):
+            value = self._attribute_value(attribute)
+            if self.send_attribute_value(attribute, value):
+                LOG.info("pushed braille attribute %s=%r", attribute, value)
 
     def _handle_channel_message(self, message_type: object, message: dict[str, Any]) -> bool:
         if message_type != MESSAGE_DISPLAY:
@@ -116,10 +131,11 @@ class BrailleProtocolSession(RdAccessSession):
         return True
 
     def _attribute_value(self, attribute: str) -> object:
+        num_cells, num_rows = self._dimensions()
         values = {
-            ATTRIBUTE_NUM_CELLS: self._num_cells,
-            ATTRIBUTE_NUM_COLS: self._num_cells // self._num_rows,
-            ATTRIBUTE_NUM_ROWS: self._num_rows,
+            ATTRIBUTE_NUM_CELLS: num_cells,
+            ATTRIBUTE_NUM_COLS: num_cells // num_rows,
+            ATTRIBUTE_NUM_ROWS: num_rows,
         }
         if attribute in values:
             return values[attribute]

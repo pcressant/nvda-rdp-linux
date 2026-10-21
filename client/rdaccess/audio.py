@@ -15,6 +15,7 @@ from __future__ import annotations
 import io
 import logging
 import math
+import os
 import struct
 import subprocess
 import threading
@@ -30,6 +31,12 @@ FADE_MS = 5
 TONE_AMPLITUDE = 0.5
 MAX_WAVE_BYTES = 16 * 1024 * 1024
 DEFAULT_PLAYER = ("pw-play", "-")
+
+
+def default_waves_dir() -> Path | None:
+    """``NVDA_WAVES_DIR`` from the environment, e.g. set by a systemd unit."""
+    value = os.environ.get("NVDA_WAVES_DIR")
+    return Path(value).expanduser() if value else None
 
 
 def make_tone_wav(hz: float, length_ms: int, left: int = 50, right: int = 50) -> bytes:

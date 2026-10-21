@@ -63,24 +63,3 @@ class ConnectionNotifier:
                 LOG.error("cannot speak connection notification: %s", error)
         if self._mode in ("sound", "both") and self._audio is not None:
             self._audio.wave("waves\\connected.wav" if connected else "waves\\disconnected.wav")
-
-
-class LazySpeaker:
-    """Separate Speech Dispatcher connection opened on first use (braille process)."""
-
-    def __init__(self, language: str) -> None:
-        self._language = language
-        self._client = None
-
-    def __call__(self, text: str) -> None:
-        if self._client is None:
-            from speechd.client import SSIPClient
-
-            self._client = SSIPClient("nvda-rdp-linux", component="notifications", autospawn=True)
-            self._client.set_language(self._language.replace("_", "-"))
-        self._client.speak(text)
-
-    def close(self) -> None:
-        if self._client is not None:
-            self._client.close()
-            self._client = None

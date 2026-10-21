@@ -24,6 +24,8 @@ PRIORITY_DISABLED = 0
 PRIORITY_REMOTE_ACTIVE = 60
 KEY_POLL_INTERVAL = 0.05
 GESTURE_SOURCE = "brltty"
+# Window or application names of supported RDP clients (substring, case-insensitive).
+DEFAULT_FOCUS_APPLICATIONS = ("freerdp", "remmina")
 
 # NVDA's brailleDisplayDrivers/brltty.py gestureMap, in GlobalGestureMap.export()
 # form: {"module.Class": {script: gesture identifier or list of identifiers}}.
@@ -99,6 +101,8 @@ class BrlApiOutput:
         self._on_gesture: Callable[[BrailleGesture], None] | None = None
         self._input_thread: threading.Thread | None = None
         self._stop_input = threading.Event()
+        self.failed = threading.Event()
+        """Set when the BrlAPI connection stops working (e.g. BRLTTY restarted)."""
         self.model: str | None = None
         try:
             self._connection.enterTtyModeWithPath()
@@ -194,6 +198,8 @@ class BrlApiOutput:
                     code = self._connection.readKey(False)
                 except Exception as error:  # noqa: BLE001 - BrlAPI raises its own exception types.
                     LOG.error("cannot read BrlAPI key: %s", error)
+                    self._stop_input.set()
+                    self.failed.set()
                     break
                 if not code:
                     break
@@ -206,10 +212,16 @@ class BrlApiOutput:
             self._input_thread.join(timeout=1)
         with self._lock:
             try:
-                self._set_priority(PRIORITY_DISABLED)
+                if not self.failed.is_set():
+                    self._set_priority(PRIORITY_DISABLED)
+            except Exception as error:  # noqa: BLE001 - the connection may already be gone.
+                LOG.debug("cannot reset BrlAPI priority during cleanup: %s", error)
             finally:
                 self._active = False
-                self._close_connection()
+                try:
+                    self._close_connection()
+                except Exception as error:  # noqa: BLE001 - the connection may already be gone.
+                    LOG.debug("cannot close BrlAPI connection: %s", error)
         LOG.info("closed BrlAPI connection")
 
     def _set_priority(self, priority: int) -> None:
@@ -234,6 +246,127 @@ class BrlApiOutput:
             self._connection = None
 
 
+class ReconnectingBrailleDisplay:
+    """BrlAPI output that survives BRLTTY being unavailable or restarted.
+
+    The braille channel must never take the speech channel down with it, so
+    BrlAPI errors are contained here: while no BrlAPI connection exists, cells
+    are only logged, and a background thread retries the connection every
+    ``retry_interval`` seconds.  Until the first connection, the display size
+    advertised to the remote NVDA is the fallback size; when the real size is
+    known or changes, ``on_dimensions_changed`` is called so that the session
+    can push the new ``numCells``/``numCols``/``numRows``, as RDAccess's
+    ``_handleDisplayDimensionChanges`` does.
+    """
+
+    def __init__(
+        self,
+        *,
+        priority: int = PRIORITY_REMOTE_ACTIVE,
+        fallback_cells: int = 40,
+        fallback_rows: int = 1,
+        retry_interval: float = 5.0,
+        connect: Callable[[], Any] | None = None,
+    ) -> None:
+        self._connect = connect or (lambda: BrlApiOutput(priority=priority))
+        self._fallback = (fallback_cells, fallback_rows)
+        self._retry_interval = retry_interval
+        self._lock = threading.Lock()
+        self._output: Any = None
+        self._active = False
+        self._on_gesture: Callable[[BrailleGesture], None] | None = None
+        self.on_dimensions_changed: Callable[[], None] | None = None
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    @property
+    def connected(self) -> bool:
+        return self._output is not None
+
+    @property
+    def num_cells(self) -> int:
+        output = self._output
+        return output.num_cells if output is not None else self._fallback[0]
+
+    @property
+    def num_rows(self) -> int:
+        output = self._output
+        return output.num_rows if output is not None else self._fallback[1]
+
+    def enable_input(self, on_gesture: Callable[[BrailleGesture], None]) -> None:
+        """Forward display keys; applies to the current and future connections."""
+        self._on_gesture = on_gesture
+
+    def start(self) -> None:
+        self._thread = threading.Thread(target=self._run, name="brlapi-connection", daemon=True)
+        self._thread.start()
+
+    def close(self) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=2)
+        self._drop_output()
+
+    def set_active(self, active: bool) -> None:
+        with self._lock:
+            self._active = active
+            output = self._output
+        if output is not None:
+            self._call(output, output.set_active, active)
+
+    def display(self, cells: list[int]) -> None:
+        output = self._output
+        if output is None:
+            LOG.debug("no BrlAPI connection; %d braille cells only logged", len(cells))
+            return
+        self._call(output, output.display, cells)
+
+    def _call(self, output: Any, method: Callable[..., None], *args: object) -> None:
+        try:
+            method(*args)
+        except Exception as error:  # noqa: BLE001 - BrlAPI raises its own exception types.
+            LOG.error("BrlAPI connection failed: %s", error)
+            output.failed.set()
+
+    def _run(self) -> None:
+        reported = False
+        while not self._stop.is_set():
+            output = self._output
+            if output is not None:
+                if output.failed.wait(self._retry_interval):
+                    LOG.warning("BrlAPI connection lost; retrying every %gs", self._retry_interval)
+                    self._drop_output()
+                continue
+            try:
+                output = self._connect()
+            except Exception as error:  # noqa: BLE001 - BrlAPI raises its own exception types.
+                log = LOG.debug if reported else LOG.warning
+                log("cannot connect to BrlAPI, retrying every %gs: %s", self._retry_interval, error)
+                reported = True
+                self._stop.wait(self._retry_interval)
+                continue
+            reported = False
+            self._install(output)
+
+    def _install(self, output: Any) -> None:
+        previous_size = (self.num_cells, self.num_rows)
+        with self._lock:
+            self._output = output
+            active = self._active
+        if self._on_gesture is not None:
+            self._call(output, output.start_input, self._on_gesture)
+        if active:
+            self._call(output, output.set_active, True)
+        if (output.num_cells, output.num_rows) != previous_size and self.on_dimensions_changed:
+            self.on_dimensions_changed()
+
+    def _drop_output(self) -> None:
+        with self._lock:
+            output, self._output = self._output, None
+        if output is not None:
+            output.close()
+
+
 def _driver_name(connection: Any) -> str | None:
     try:
         name = connection.driverName
@@ -251,7 +384,7 @@ class AtSpiFocusTracker:
         self,
         on_active_changed: Callable[[bool], None],
         *,
-        application_pattern: str = "freerdp",
+        application_patterns: tuple[str, ...] = DEFAULT_FOCUS_APPLICATIONS,
         registry: Any = None,
     ) -> None:
         if registry is None:
@@ -260,7 +393,7 @@ class AtSpiFocusTracker:
             registry = pyatspi.Registry
         self._registry = registry
         self._on_active_changed = on_active_changed
-        self._pattern = application_pattern.casefold()
+        self._patterns = tuple(pattern.casefold() for pattern in application_patterns)
         self._thread: threading.Thread | None = None
         self._active = False
 
@@ -273,7 +406,7 @@ class AtSpiFocusTracker:
             daemon=True,
         )
         self._thread.start()
-        LOG.info("watching AT-SPI focus for application pattern=%r", self._pattern)
+        LOG.info("watching AT-SPI focus for application patterns=%r", self._patterns)
 
     def close(self) -> None:
         self._set_active(False)
@@ -291,8 +424,9 @@ class AtSpiFocusTracker:
             application_name = application.name if application is not None else ""
         except (AttributeError, OSError, RuntimeError) as error:
             LOG.warning("cannot identify AT-SPI window application: %s", error)
-        matches = (
-            self._pattern in application_name.casefold() or self._pattern in window_name.casefold()
+        matches = any(
+            pattern in application_name.casefold() or pattern in window_name.casefold()
+            for pattern in self._patterns
         )
         if event.type.endswith(":activate"):
             active = matches

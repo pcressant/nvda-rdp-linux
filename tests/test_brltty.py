@@ -202,3 +202,83 @@ def test_keys_are_forwarded_only_while_active() -> None:
     api.connection.keys = [0x20000000 | 23, 0x20000000 | 0x10000 | 3]
     output.poll_keys(names)
     assert [(g.id, g.routing_index) for g in gestures] == [("fwinlt", None), ("route", 3)]
+
+
+def test_focus_tracker_recognizes_remmina_by_default() -> None:
+    states: list[bool] = []
+    tracker = AtSpiFocusTracker(states.append, registry=FakeRegistry())
+    tracker._on_window_event(event("window:activate", "remmina", "windows-remote"))
+    tracker._on_window_event(event("window:activate", "org.gnome.Terminal"))
+    assert states == [True, False]
+
+
+class FakeDisplayOutput:
+    def __init__(self, cells: int = 40, rows: int = 1) -> None:
+        import threading
+
+        self.num_cells = cells
+        self.num_rows = rows
+        self.failed = threading.Event()
+        self.displays: list[list[int]] = []
+        self.active: list[bool] = []
+        self.inputs = 0
+        self.closed = False
+        self.fail_display = False
+
+    def display(self, cells: list[int]) -> None:
+        if self.fail_display:
+            raise RuntimeError("BrlAPI gone")
+        self.displays.append(cells)
+
+    def set_active(self, active: bool) -> None:
+        self.active.append(active)
+
+    def start_input(self, _on_gesture) -> None:
+        self.inputs += 1
+
+    def close(self) -> None:
+        self.closed = True
+
+
+def test_reconnecting_display_falls_back_until_brlapi_answers() -> None:
+    from client.rdaccess.brltty import ReconnectingBrailleDisplay
+
+    attempts: list[FakeDisplayOutput] = []
+
+    def connect() -> FakeDisplayOutput:
+        if not attempts:
+            attempts.append(None)  # first attempt fails, like a polkit refusal
+            raise RuntimeError("Authentication failed")
+        output = FakeDisplayOutput(cells=80)
+        attempts.append(output)
+        return output
+
+    changes: list[int] = []
+    display = ReconnectingBrailleDisplay(fallback_cells=40, retry_interval=0.01, connect=connect)
+    display.on_dimensions_changed = lambda: changes.append(display.num_cells)
+    display.enable_input(lambda _gesture: None)
+    display.set_active(True)
+    assert (display.connected, display.num_cells) == (False, 40)
+    display.display([0] * 40)  # only logged
+
+    display.start()
+    for _ in range(200):
+        if display.connected:
+            break
+        import time
+
+        time.sleep(0.01)
+    output = attempts[-1]
+    assert display.connected and display.num_cells == 80
+    assert changes == [80]
+    assert output.inputs == 1 and output.active == [True]
+
+    output.fail_display = True
+    display.display([1] * 80)
+    assert output.failed.is_set()
+    for _ in range(200):
+        if output.closed:
+            break
+        time.sleep(0.01)
+    assert output.closed
+    display.close()

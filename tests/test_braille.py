@@ -201,3 +201,25 @@ def test_braille_settings_are_empty() -> None:
         session.feed(json.dumps({"attribute": attribute, "type": "attribute_request"}).encode())
         session.feed(b"\n")
     assert [json.loads(payload)["value"] for payload in sent[2:]] == [[], None, {}]
+
+
+def test_dimensions_follow_output_and_can_be_pushed() -> None:
+    class ResizableOutput:
+        num_cells = 40
+        num_rows = 1
+
+        def display(self, cells: list[int]) -> None:
+            pass
+
+    output = ResizableOutput()
+    sent: list[bytes] = []
+    session = BrailleProtocolSession(send=sent.append, output=output)
+    session.connect()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    output.num_cells = 80
+    session.push_dimensions()
+    assert [json.loads(payload) for payload in sent[2:]] == [
+        {"attribute": "numCells", "value": 80, "type": "attribute_value"},
+        {"attribute": "numCols", "value": 80, "type": "attribute_value"},
+        {"attribute": "numRows", "value": 1, "type": "attribute_value"},
+    ]

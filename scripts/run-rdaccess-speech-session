@@ -14,11 +14,9 @@ NVDA_WAVES_DIR=${NVDA_WAVES_DIR:-}
 if [[ -z "$NVDA_WAVES_DIR" && -d "$project_dir/nvda-waves" ]]; then
   NVDA_WAVES_DIR=$project_dir/nvda-waves
 fi
-# Optional extra options, split on spaces, e.g. "--settings-management".
-RDACCESS_SPEECH_OPTIONS=${RDACCESS_SPEECH_OPTIONS:-}
-RDACCESS_BRAILLE_OPTIONS=${RDACCESS_BRAILLE_OPTIONS:-}
-export RDP_HOST RDP_USER RDP_DOMAIN NVDA_WAVES_DIR
-export RDACCESS_SPEECH_OPTIONS RDACCESS_BRAILLE_OPTIONS
+# Optional extra client options, split on spaces, e.g. "--settings-management".
+RDACCESS_CLIENT_OPTIONS=${RDACCESS_CLIENT_OPTIONS:-}
+export RDP_HOST RDP_USER RDP_DOMAIN NVDA_WAVES_DIR RDACCESS_CLIENT_OPTIONS
 
 set +e
 nix develop --command bash -c '
@@ -26,54 +24,37 @@ nix develop --command bash -c '
 
   socket_path=${NVDA_RDP_SOCKET:-"$XDG_RUNTIME_DIR/nvda-rdp-linux/speech.sock"}
   braille_socket_path=${NVDA_RDP_BRAILLE_SOCKET:-"$XDG_RUNTIME_DIR/nvda-rdp-linux/braille.sock"}
-  waves_options=()
-  if [[ -n "$NVDA_WAVES_DIR" ]]; then
-    waves_options=(--nvda-waves-dir "$NVDA_WAVES_DIR")
-  fi
-  read -r -a speech_options <<< "$RDACCESS_SPEECH_OPTIONS"
-  read -r -a braille_options <<< "$RDACCESS_BRAILLE_OPTIONS"
-  python -m client.main "${waves_options[@]}" "${speech_options[@]}" \
-    > logs/rdaccess-client.log 2>&1 &
-  client_pid=$!
-  python -m client.braille_main --brlapi "${waves_options[@]}" "${braille_options[@]}" \
-    > logs/rdaccess-braille.log 2>&1 &
-  braille_client_pid=$!
-
+  read -r -a client_options <<< "$RDACCESS_CLIENT_OPTIONS"
+  client_pid=""
   cleanup() {
-    kill -TERM "$client_pid" 2>/dev/null || true
-    kill -TERM "$braille_client_pid" 2>/dev/null || true
-    wait "$client_pid" 2>/dev/null || true
-    wait "$braille_client_pid" 2>/dev/null || true
+    if [[ -n "$client_pid" ]]; then
+      kill -TERM "$client_pid" 2>/dev/null || true
+      wait "$client_pid" 2>/dev/null || true
+    fi
   }
   trap cleanup EXIT
 
-  for _attempt in $(seq 1 50); do
-    if [[ -S "$socket_path" ]]; then
-      break
-    fi
-    if ! kill -0 "$client_pid" 2>/dev/null; then
-      echo "The RDAccess speech client stopped before creating $socket_path" >&2
+  if systemctl --user --quiet is-active nvda-rdp-client.service 2>/dev/null; then
+    echo "Using the running nvda-rdp-client user service."
+    echo "Its log: journalctl --user -u nvda-rdp-client"
+  else
+    python -m client "${client_options[@]}" > logs/nvda-rdp-client.log 2>&1 &
+    client_pid=$!
+
+    for _attempt in $(seq 1 50); do
+      if [[ -S "$socket_path" && -S "$braille_socket_path" ]]; then
+        break
+      fi
+      if ! kill -0 "$client_pid" 2>/dev/null; then
+        echo "The RDAccess client stopped; see logs/nvda-rdp-client.log" >&2
+        exit 1
+      fi
+      sleep 0.1
+    done
+    if [[ ! -S "$socket_path" || ! -S "$braille_socket_path" ]]; then
+      echo "The RDAccess client sockets were not created; see logs/nvda-rdp-client.log" >&2
       exit 1
     fi
-    sleep 0.1
-  done
-  if [[ ! -S "$socket_path" ]]; then
-    echo "The RDAccess speech socket was not created: $socket_path" >&2
-    exit 1
-  fi
-  for _attempt in $(seq 1 50); do
-    if [[ -S "$braille_socket_path" ]]; then
-      break
-    fi
-    if ! kill -0 "$braille_client_pid" 2>/dev/null; then
-      echo "The RDAccess braille client stopped before creating $braille_socket_path" >&2
-      exit 1
-    fi
-    sleep 0.1
-  done
-  if [[ ! -S "$braille_socket_path" ]]; then
-    echo "The RDAccess braille socket was not created: $braille_socket_path" >&2
-    exit 1
   fi
 
   read -r -s -p "RDP password: " rdp_password

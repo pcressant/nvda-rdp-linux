@@ -7,11 +7,14 @@ handles them locally with Speech Dispatcher and BRLTTY.
 The project keeps the FreeRDP DVC plugin limited to raw transport. RDAccess
 protocol handling and local output live in separate Python processes.
 
-This is a proof of concept, not a finished production solution. Compatibility
-has so far been developed and tested against the specific RDAccess version and
-commit documented in [run.md](run.md). Braille input, complete RDAccess command
-coverage, RDAccess 1.x compatibility, and direct Orca integration are not yet
-implemented.
+This is a proof of concept, not a finished production solution. Speech and
+braille output were tested in real sessions against RDAccess 2.0.0 (commit
+documented in [run.md](run.md)). The client side of RDAccess 2.0.5 is now
+implemented as well — speech commands (prosody, language, breaks), NVDA tones
+and sounds, driver settings management, braille display keys and braille
+keyboard input, Caps Lock synchronization and connection notifications — but
+these additions have not yet been tested against a real RDP session. RDAccess
+1.x compatibility and direct Orca integration are not implemented.
 
 Development and builds have so far been performed and validated with Nix; a
 build outside the provided Nix environment has not yet been tested.

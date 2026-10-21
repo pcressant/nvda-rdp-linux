@@ -147,3 +147,57 @@ def test_braille_reconnect_sends_xon_and_resets_partial_json() -> None:
         CONNECTION_XON,
         PROTOCOL_VERSION_2_LEGACY,
     ]
+
+
+def test_gesture_map_is_advertised_when_braille_input_is_enabled() -> None:
+    from client.rdaccess.brltty import BRLTTY_GESTURE_MAP
+
+    sent: list[bytes] = []
+    session = BrailleProtocolSession(send=sent.append, gesture_map=BRLTTY_GESTURE_MAP)
+    session.connect()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    session.feed(b'{"attribute":"gestureMap","type":"attribute_request"}\n')
+    name, export = json.loads(sent[-1])["value"]
+    assert name == "GlobalGestureMap"
+    assert export["globalCommands.GlobalCommands"]["braille_routeTo"] == "br(brltty):route"
+
+
+def test_gestures_are_sent_as_braille_input() -> None:
+    from client.rdaccess.braille import BrailleGesture
+
+    sent: list[bytes] = []
+    session = BrailleProtocolSession(send=sent.append)
+    session.connect()
+    session.send_gesture(BrailleGesture("brltty", "route", "bm", routing_index=5))
+    session.send_gesture(
+        BrailleGesture("brltty", "passdots", "bm", dots=0b11, space=True, is_braille_input=True)
+    )
+    assert [json.loads(payload) for payload in sent[1:]] == [
+        {
+            "source": "brltty",
+            "id": "route",
+            "routingIndex": 5,
+            "model": "bm",
+            "type": "braille_input",
+        },
+        {
+            "source": "brltty",
+            "id": "passdots",
+            "routingIndex": None,
+            "model": "bm",
+            "dots": 3,
+            "space": True,
+            "type": "braille_input",
+        },
+    ]
+
+
+def test_braille_settings_are_empty() -> None:
+    sent: list[bytes] = []
+    session = BrailleProtocolSession(send=sent.append)
+    session.connect()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    for attribute in ("supportedSettings", "setting_foo", "availableFoos"):
+        session.feed(json.dumps({"attribute": attribute, "type": "attribute_request"}).encode())
+        session.feed(b"\n")
+    assert [json.loads(payload)["value"] for payload in sent[2:]] == [[], None, {}]

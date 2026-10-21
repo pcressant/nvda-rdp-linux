@@ -28,7 +28,14 @@ RDAccess protocol/bridge
         +--> possible Orca integration
 ```
 
-The project is currently experimental. Do not implement future stages prematurely.
+The project is currently experimental.
+
+Current effort (October 2026): bring the Linux client to feature parity with
+the client side of RDAccess 2.0.5 (`remoteSpeechHandler`,
+`remoteBrailleHandler`, `_remoteHandler`). At the user's request, all parity
+features are implemented in one pass, with unit tests, and validated by the
+user in a single real RDP session at the end. The RDAccess 1.x (pickle)
+protocol and direct Orca integration remain out of scope.
 
 ## Environment
 
@@ -79,51 +86,11 @@ Explicitly distinguish between:
 * what has been inferred;
 * what remains hypothetical.
 
-## IMPORTANT — out.md
+## Language
 
-`out.md` is the technical report intended for the human user, in french.
-
-AT THE END OF EVERY SIGNIFICANT TASK, update `out.md`.
-
-This is a permanent rule and must not require reminders from the user.
-
-`out.md` must explain what the user needs to understand about the work performed, rather than merely copying the commands that were executed.
-
-After a long Codex session, the user should be able to read only `out.md` and understand:
-
-* what was investigated;
-* what was discovered;
-* what works;
-* what does not work;
-* what evidence is available;
-* which files/code were modified;
-* which technical decisions were made and why;
-* what uncertainties remain;
-* what problem should be solved next;
-* which commands, if any, the user must run manually.
-
-Prefer technically precise but readable explanations.
-
-Avoid cluttering `out.md` with:
-
-* every intermediate command;
-* unimportant failed attempts;
-* normal build output;
-* internal reasoning details that do not contribute to the diagnosis.
-
-However, retain details that are useful for understanding or reproducing a result:
-
-* relevant timestamps;
-* error messages;
-* function/class names;
-* DVC names;
-* important package or software versions;
-* protocol excerpts;
-* useful reproduction commands.
-
-If an experiment invalidates a previous conclusion, update `out.md` so that it reflects the current state of knowledge. Clearly identify the invalidated conclusion if it was important.
-
-Treat `out.md` as the living documentation of the experiment's current state.
+Everything in this repository is written in English: code, comments, logs,
+scripts, documentation, and `AGENT.md`. French is only used when talking
+with the user.
 
 ## User Accessibility
 
@@ -180,7 +147,6 @@ Do not create commits automatically unless explicitly requested by the user.
 Never put a password:
 
 * in Git;
-* in `out.md`;
 * in a tracked script;
 * on a command line when it could appear in `ps` output or logs.
 
@@ -289,7 +255,7 @@ Therefore:
 * make allocations, deallocations, and ownership explicit;
 * systematically check important return values.
 
-When making a significant C change, explain its operation in `out.md` in terms of system logic:
+When making a significant C change, explain its operation to the user in terms of system logic:
 
 * who calls the function;
 * when it is called;
@@ -396,5 +362,5 @@ The goal is to understand each layer well enough to produce an implementation th
 * reproducible;
 * usable with the user's accessibility tools.
 
-When in doubt, reduce the scope of the change, increase observability, and document the result in `out.md`.
+When in doubt, reduce the scope of the change, increase observability, and document the result.
 

@@ -8,7 +8,17 @@ mkdir -p logs
 : "${RDP_HOST:?Set RDP_HOST to the Windows RDP host}"
 : "${RDP_USER:?Set RDP_USER to the Windows account name}"
 RDP_DOMAIN=${RDP_DOMAIN:-}
-export RDP_HOST RDP_USER RDP_DOMAIN
+# Optional: a copy of NVDA's "waves" directory, used for NVDA sounds and
+# connection sounds forwarded by RDAccess.
+NVDA_WAVES_DIR=${NVDA_WAVES_DIR:-}
+if [[ -z "$NVDA_WAVES_DIR" && -d "$project_dir/nvda-waves" ]]; then
+  NVDA_WAVES_DIR=$project_dir/nvda-waves
+fi
+# Optional extra options, split on spaces, e.g. "--settings-management".
+RDACCESS_SPEECH_OPTIONS=${RDACCESS_SPEECH_OPTIONS:-}
+RDACCESS_BRAILLE_OPTIONS=${RDACCESS_BRAILLE_OPTIONS:-}
+export RDP_HOST RDP_USER RDP_DOMAIN NVDA_WAVES_DIR
+export RDACCESS_SPEECH_OPTIONS RDACCESS_BRAILLE_OPTIONS
 
 set +e
 nix develop --command bash -c '
@@ -16,9 +26,17 @@ nix develop --command bash -c '
 
   socket_path=${NVDA_RDP_SOCKET:-"$XDG_RUNTIME_DIR/nvda-rdp-linux/speech.sock"}
   braille_socket_path=${NVDA_RDP_BRAILLE_SOCKET:-"$XDG_RUNTIME_DIR/nvda-rdp-linux/braille.sock"}
-  python -m client.main > logs/rdaccess-client.log 2>&1 &
+  waves_options=()
+  if [[ -n "$NVDA_WAVES_DIR" ]]; then
+    waves_options=(--nvda-waves-dir "$NVDA_WAVES_DIR")
+  fi
+  read -r -a speech_options <<< "$RDACCESS_SPEECH_OPTIONS"
+  read -r -a braille_options <<< "$RDACCESS_BRAILLE_OPTIONS"
+  python -m client.main "${waves_options[@]}" "${speech_options[@]}" \
+    > logs/rdaccess-client.log 2>&1 &
   client_pid=$!
-  python -m client.braille_main --brlapi > logs/rdaccess-braille.log 2>&1 &
+  python -m client.braille_main --brlapi "${waves_options[@]}" "${braille_options[@]}" \
+    > logs/rdaccess-braille.log 2>&1 &
   braille_client_pid=$!
 
   cleanup() {
@@ -34,13 +52,13 @@ nix develop --command bash -c '
       break
     fi
     if ! kill -0 "$client_pid" 2>/dev/null; then
-      echo "Le client RDAccess s’est arrêté avant de créer $socket_path" >&2
+      echo "The RDAccess speech client stopped before creating $socket_path" >&2
       exit 1
     fi
     sleep 0.1
   done
   if [[ ! -S "$socket_path" ]]; then
-    echo "Le socket RDAccess n’a pas été créé: $socket_path" >&2
+    echo "The RDAccess speech socket was not created: $socket_path" >&2
     exit 1
   fi
   for _attempt in $(seq 1 50); do
@@ -48,17 +66,17 @@ nix develop --command bash -c '
       break
     fi
     if ! kill -0 "$braille_client_pid" 2>/dev/null; then
-      echo "Le client braille s’est arrêté avant de créer $braille_socket_path" >&2
+      echo "The RDAccess braille client stopped before creating $braille_socket_path" >&2
       exit 1
     fi
     sleep 0.1
   done
   if [[ ! -S "$braille_socket_path" ]]; then
-    echo "Le socket braille n’a pas été créé: $braille_socket_path" >&2
+    echo "The RDAccess braille socket was not created: $braille_socket_path" >&2
     exit 1
   fi
 
-  read -r -s -p "Mot de passe RDP: " rdp_password
+  read -r -s -p "RDP password: " rdp_password
   printf "\n"
 
   rdp_target=("/v:$RDP_HOST" "/u:$RDP_USER")
@@ -87,6 +105,6 @@ nix develop --command bash -c '
 status=$?
 set -e
 
-printf '\nLe test s’est arrêté avec le code %d. Appuyez sur Entrée pour fermer.\n' "$status"
+printf '\nThe session stopped with exit code %d. Press Enter to close.\n' "$status"
 read -r
 exit "$status"

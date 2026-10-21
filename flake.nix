@@ -67,6 +67,9 @@
               ruff
               speechd
               brltty
+              pipewire # pw-play for NVDA tones and sounds
+              xdotool # optional Caps Lock synchronization
+              xset # optional Caps Lock synchronization
 
               # C/C++ editor tooling, formatting, and static analysis
               clang-tools
@@ -75,6 +78,17 @@
               "${pkgs.speechd}/lib/python${pkgs.python3.pythonVersion}/site-packages"
               "${pkgs.brltty}/lib/python${pkgs.python3.pythonVersion}/site-packages"
             ];
+            # pyatspi needs the Atspi typelib; do not rely on the host session's
+            # GI_TYPELIB_PATH, which depends on the terminal the shell starts from.
+            shellHook = ''
+              export GI_TYPELIB_PATH="${
+                pkgs.lib.makeSearchPath "lib/girepository-1.0" [
+                  pkgs.at-spi2-core
+                  pkgs.glib
+                  pkgs.gobject-introspection
+                ]
+              }''${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}"
+            '';
           };
         }
       );

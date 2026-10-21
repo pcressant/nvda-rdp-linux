@@ -1,10 +1,14 @@
 # Getting Started with the NVDA/RDAccess Prototype
 
-This guide explains how to build, test, and experiment with the current prototype. Compatibility has been specifically verified against RDAccess 2.0.0 at the following exact commit:
+This guide explains how to build, test, and experiment with the current prototype. Speech and braille output have been verified in real sessions against RDAccess 2.0.0 at the following exact commit:
 
 ```text
 2da84e8496519cf23614c0cfb3ace61ee0f9cd95
 ```
+
+The client now implements the client side of RDAccess 2.0.5 (released
+2026-10-15). The features added for 2.0.5 parity are covered by unit tests but
+have not yet been tested in a real RDP session.
 
 ## Overview
 
@@ -23,10 +27,12 @@ Python clients
         |
         +--> persistent SSIP connection --> Speech Dispatcher / eSpeak NG
         |
-        +--> braille cell capture (BRLTTY connected)
+        +--> pw-play --> NVDA tones and sounds
+        |
+        +--> BrlAPI --> BRLTTY (cells out, display keys back to NVDA)
 ```
 
-The C plugin handles FreeRDP, the DVCs, and IPC transport. The Python processes reconstruct JSON Lines messages, implement the small subset of RDAccess currently required, and communicate with Speech Dispatcher.
+The C plugin handles FreeRDP, the DVCs, and IPC transport. The Python processes reconstruct JSON Lines messages, implement the client side of RDAccess, and communicate with Speech Dispatcher, PipeWire and BRLTTY.
 
 The plugin contains no RDAccess logic and generates no application-level bytes. It transports payloads in both directions and produces diagnostic dumps. The Python clients send XON on each connection, then handle the `protocolVersion=2` handshake and channel-specific responses.
 
@@ -39,12 +45,20 @@ Main files:
 * `client/braille_main.py`: braille process entry point;
 * `client/rdaccess/ipc.py`: Unix socket and 32-bit framing;
 * `client/rdaccess/framing.py`: IPC frame reconstruction;
-* `client/rdaccess/protocol.py`: handshake, JSON Lines, `speak`, `cancel`, and
-  `CharacterModeCommand` segmentation;
-* `client/rdaccess/speech.py`: persistent Speech Dispatcher connection;
+* `client/rdaccess/session.py`: shared handshake, legacy/JSON stream parsing,
+  generic attributes (`supportedSettings`, versions, `capsLockToggle`);
+* `client/rdaccess/protocol.py`: `NVDA-SPEECH` messages and speech sequence
+  rendering (indexes, character mode, language, prosody, breaks);
+* `client/rdaccess/speech.py`: persistent Speech Dispatcher connection and
+  voice settings;
+* `client/rdaccess/settings.py`: JSON encoding of NVDA driver settings;
+* `client/rdaccess/audio.py`: NVDA tones and wave files through `pw-play`;
+* `client/rdaccess/braille.py`: `NVDA-BRAILLE` messages and gestures;
+* `client/rdaccess/brltty.py`: BrlAPI output, key input and AT-SPI focus;
+* `client/rdaccess/capslock.py`: optional Caps Lock synchronization;
+* `client/rdaccess/notify.py`: connection notifications;
 * `tests/`: unit tests and fixtures captured from real exchanges;
 * `scripts/run-rdaccess-speech-session`: recommended complete launcher;
-* `out.md`: detailed technical project log.
 
 ## Entering the Development Environment
 
@@ -54,7 +68,7 @@ From the repository root:
 nix develop
 ```
 
-The shell includes FreeRDP 3.30.0 with the plugin installed, GCC, CMake, Ninja, pkg-config, Python, pytest, Ruff, clang-format, clangd, and Speech Dispatcher 0.12.1.
+The shell includes FreeRDP 3.30.0 with the plugin installed, GCC, CMake, Ninja, pkg-config, Python, pytest, Ruff, clang-format, clangd, Speech Dispatcher 0.12.1, BRLTTY, PipeWire's `pw-play`, `xdotool` and `xset`.
 
 After modifying the plugin, running `nix develop` again may rebuild the local FreeRDP variant. The first invocation can therefore take longer.
 
@@ -102,7 +116,7 @@ Run the complete flake check from the repository root:
 nix flake check
 ```
 
-The tests cover fragmented and concatenated IPC framing, JSON Lines, fragmented UTF-8, real-world fixtures, `speak`, `IndexCommand`, `CharacterModeCommand`, `cancel`, reconnections, and outgoing handshake responses.
+The tests cover fragmented and concatenated IPC framing, JSON Lines, fragmented UTF-8, real-world fixtures, `speak` and all supported speech commands, `cancel`, `pause_speech`, tones and waves (including path traversal refusal), driver settings, braille gestures and gesture map, Caps Lock synchronization, notifications, reconnections, and outgoing handshake responses. Messages that were not captured from a real session are marked as synthetic in the tests.
 
 ## Recommended Full Session
 
@@ -128,6 +142,22 @@ The script:
 8. cleanly stops both Python clients when the session ends.
 
 The password is never included in the command line or logs.
+
+Optional environment variables:
+
+```text
+NVDA_WAVES_DIR             copy of NVDA's waves directory (sounds)
+RDACCESS_SPEECH_OPTIONS    extra options for client.main
+RDACCESS_BRAILLE_OPTIONS   extra options for client.braille_main
+```
+
+Example:
+
+```bash
+export NVDA_WAVES_DIR=~/nvda-waves
+export RDACCESS_SPEECH_OPTIONS="--settings-management"
+export RDACCESS_BRAILLE_OPTIONS="--sync-caps-lock"
+```
 
 Important FreeRDP settings used by the script:
 
@@ -203,15 +233,26 @@ Default values:
 
 ```text
 module: espeak-ng
-language: fr
+language: from the locale (LC_ALL, then LC_MESSAGES, then LANG), else en
 Orca rate: 75
 ```
+
+The language is reported to the remote NVDA as the language of the local
+synthesizer, as RDAccess does with `synth.language`; the remote NVDA uses it
+for automatic language switching, symbol processing and character
+descriptions. It also selects the language of connection notifications.
+Speech Dispatcher's own default language is not used because screen readers
+such as Orca set their voice per connection and the global default often stays
+`en-US`. Orca itself falls back to the locale when no voice language is
+configured.
 
 To experiment manually:
 
 ```bash
-python -m client.main --language fr --rate 70 --output-module espeak-ng
+python -m client.main --language fr_FR --rate 70 --output-module espeak-ng
 ```
+
+`--language` is also accepted by `client.braille_main`, for notifications.
 
 The rate uses Orca's 0–100 scale. The SSIP conversion is:
 
@@ -219,7 +260,52 @@ The rate uses Orca's 0–100 scale. The SSIP conversion is:
 SSIP = 2 × Orca rate − 100
 ```
 
-Therefore, Orca 70 maps to SSIP +40, and Orca 75 maps to SSIP +50.
+Therefore, Orca 70 maps to SSIP +40, and Orca 75 maps to SSIP +50. Pitch and
+volume use the same conversion.
+
+Other speech client options:
+
+```text
+--pitch-change N        pitch offset added to remote speech, like RDAccess's
+                        "incoming speech pitch change" (default 10, 0 disables)
+--enable-pause          honour pause_speech (off by default: sd_espeak-ng
+                        repeated the sentence on resume)
+--settings-management   let the remote NVDA read and change the local voice,
+                        rate, pitch and volume (RDAccess "driver settings
+                        management"; off by default, as upstream)
+--nvda-waves-dir DIR    play NVDA sounds such as waves\error.wav from DIR
+--audio-player CMD      player fed with a WAV file on stdin (default "pw-play -")
+--notify MODE           none, message, sound or both (default message)
+```
+
+## NVDA Sounds
+
+When RDAccess's remote synthesizer is active, the remote NVDA does not play its
+own beeps and sounds: it sends them as `tone` and `wave` messages. Tones are
+generated locally. Wave files are referenced by their path inside NVDA's
+program directory (for example `waves\error.wav`), so the Linux side needs a
+copy of NVDA's `waves` directory, given with `--nvda-waves-dir` or
+`NVDA_WAVES_DIR`. The launcher uses `nvda-waves/` at the repository root when
+it exists (ignored by Git). Only files inside that directory are played; sounds from
+other add-ons are refused and logged.
+
+## Braille Options
+
+```text
+--brlapi                 render on the BRLTTY display through BrlAPI
+--no-braille-input       do not forward display keys to the remote NVDA
+--sync-caps-lock         align the local Caps Lock with the remote NVDA when
+                         FreeRDP loses focus (X11 tools; uncertain on Wayland)
+--notify MODE            default: message with --brlapi, none otherwise
+--nvda-waves-dir DIR     for --notify sound/both
+```
+
+With `--brlapi`, display keys are read as BRLTTY commands while FreeRDP has
+focus and sent to the remote NVDA exactly like NVDA's own `brltty` driver
+does (`br(brltty):fwinlt`, `br(brltty):route`, ...). The remote NVDA receives
+NVDA's standard `brltty` gesture map, so scrolling, line navigation and
+routing work without configuration. Braille keyboard dots (`passdots`) are sent
+as braille input and translated by the remote NVDA's input table.
 
 ## Reading the Logs
 
@@ -263,15 +349,16 @@ forwarded 68 IPC bytes to DVC
 Check the protocol and speech path:
 
 ```bash
-rg -n 'sent legacy client|sent language|submitting speech|accepted speak|accepted cancel|unsupported' \
+rg -n 'sent legacy|sent speech attribute|server speech|submitting speech|accepted speak|accepted cancel|playing|unsupported' \
   logs/rdaccess-client.log
 ```
 
 Typical healthy output:
 
 ```text
-sent legacy client protocolVersion=2
-sent language attribute value='fr'
+sent legacy speech protocolVersion=2
+sent speech attribute language='fr'
+server speech rdAccessVersion='2.0.5'
 submitting speech text='Bureau  fenêtre'
 Speech Dispatcher accepted speak character_mode=False text='Bureau  fenêtre'
 Speech Dispatcher accepted cancel
@@ -280,7 +367,7 @@ Speech Dispatcher accepted cancel
 Check the braille channel:
 
 ```bash
-rg -n 'protocolVersion|numRows|numCols|display|invalid|ERROR' \
+rg -n 'protocolVersion|numRows|numCols|gestureMap|display|gesture|invalid|ERROR' \
   logs/rdaccess-braille.log
 ```
 
@@ -347,8 +434,11 @@ To experiment without mixing responsibilities:
 
 * DVC transport or socket connection: `freerdp-plugin/nvda_rdp_dvc.c`;
 * IPC framing: `client/rdaccess/framing.py` and `client/rdaccess/ipc.py`;
-* new RDAccess messages: `client/rdaccess/protocol.py`;
-* braille negotiation and capture: `client/rdaccess/braille.py`;
+* handshake and generic attributes: `client/rdaccess/session.py`;
+* new speech messages or commands: `client/rdaccess/protocol.py`;
+* braille messages and gestures: `client/rdaccess/braille.py`;
+* braille display keys: `client/rdaccess/brltty.py`;
+* tones and sounds: `client/rdaccess/audio.py`;
 * Speech Dispatcher rendering: `client/rdaccess/speech.py`;
 * Python launch options: `client/main.py`;
 * braille process startup: `client/braille_main.py`;
@@ -369,24 +459,17 @@ compare all three logs
 
 ## Current Limitations
 
-* compatibility is currently targeted only at the RDAccess commit specified at
-  the beginning of this document;
-* `NVDA-BRAILLE` performs a real JSON v2 negotiation and captures `display`
-  arrays in `logs/rdaccess-braille.log`; BrlAPI rendering with focus-based
-  priority is implemented and worked with a physical braille
-  display, but no gestures are currently sent yet;
-* `IndexCommand` is sent back to RDAccess when local speech synthesis actually
-  finishes; full spelling and typing assistance have been confirmed by
-  listening to the resulting speech;
-* `pause_speech` is recognized but intentionally ignored because `sd_espeak-ng`
-  repeated the sentence after resuming; interruption through `cancel` remains
-  functional;
-* the `supportedCommands` attribute advertises only `CharacterModeCommand` and
-  `IndexCommand`, the two commands actually supported;
-* `wave` is logged but not rendered;
-  Windows sounds remain available through FreeRDP audio redirection and are
-  therefore not duplicated on the Linux side;
-* no RDAccess 1.x compatibility;
+* real-session validation covers RDAccess 2.0.0 speech output, indexes,
+  character mode, cancel and braille output; everything added for 2.0.5
+  parity is only unit-tested so far;
+* `pause_speech` is ignored unless `--enable-pause` is given, because
+  `sd_espeak-ng` repeated the sentence after resuming;
+* NVDA sounds need a local copy of NVDA's `waves` directory;
+* Caps Lock synchronization relies on X11 tools and may not work under Wayland;
+* `timeSinceInput` is not used: AT-SPI focus decides when the remote output
+  owns the braille display;
+* no RDAccess 1.x compatibility (its legacy payloads are pickled and are
+  deliberately never decoded);
 * no direct Orca integration.
 
 ## Assisted Testing Rule

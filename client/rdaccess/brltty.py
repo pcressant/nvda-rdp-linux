@@ -1,4 +1,13 @@
-"""Focus-aware BrlAPI output which yields the display to Orca when inactive."""
+"""Focus-aware BrlAPI output which yields the display to Orca when inactive.
+
+While FreeRDP has focus, this client owns the braille display: it writes the
+remote cells and reads the display's keys as BRLTTY commands.  Keys are
+translated exactly like NVDA's own ``brltty`` braille display driver does
+(``source="brltty"``, gesture id = lower-case BrlAPI command name), and
+NVDA's ``brltty`` gesture map is advertised to the remote NVDA so that the
+usual BRLTTY bindings (scroll, line up/down, routing, ...) work unchanged.
+Braille keyboard dots (``PASSDOTS``) are additionally sent as braille input.
+"""
 
 from __future__ import annotations
 
@@ -7,10 +16,71 @@ import threading
 from collections.abc import Callable
 from typing import Any
 
+from .braille import BrailleGesture
+
 LOG = logging.getLogger(__name__)
 
 PRIORITY_DISABLED = 0
 PRIORITY_REMOTE_ACTIVE = 60
+KEY_POLL_INTERVAL = 0.05
+GESTURE_SOURCE = "brltty"
+
+# NVDA's brailleDisplayDrivers/brltty.py gestureMap, in GlobalGestureMap.export()
+# form: {"module.Class": {script: gesture identifier or list of identifiers}}.
+BRLTTY_GESTURE_MAP: dict[str, dict[str, object]] = {
+    "globalCommands.GlobalCommands": {
+        "braille_scrollBack": "br(brltty):fwinlt",
+        "braille_scrollForward": "br(brltty):fwinrt",
+        "braille_previousLine": "br(brltty):lnup",
+        "braille_nextLine": "br(brltty):lndn",
+        "braille_routeTo": "br(brltty):route",
+        "toggleInputHelp": "br(brltty):learn",
+        "showGui": "br(brltty):prefmenu",
+        "revertConfiguration": "br(brltty):prefload",
+        "saveConfiguration": "br(brltty):prefsave",
+        "dateTime": "br(brltty):time",
+        "review_currentLine": "br(brltty):say_line",
+        "review_sayAll": "br(brltty):say_below",
+    },
+}
+
+
+def command_names(api: Any) -> dict[int, str]:
+    """Map BrlAPI command codes to NVDA gesture ids, e.g. ``KEY_CMD_FWINLT`` -> ``fwinlt``.
+
+    The ``*_MASK``/``*_SHIFT`` constants share the ``KEY_CMD_`` prefix but are
+    not commands; they are skipped so they cannot shadow real command codes.
+    """
+    return {
+        getattr(api, name): name[len("KEY_CMD_") :].lower()
+        for name in dir(api)
+        if name.startswith("KEY_CMD_")
+        and not name.endswith(("_MASK", "_SHIFT"))
+        and isinstance(getattr(api, name), int)
+    }
+
+
+def translate_key(key: dict[str, int], api: Any, names: dict[int, str], model: str | None):
+    """Turn one expanded BrlAPI key into a gesture, or None when it is not forwarded."""
+    if key.get("type") != api.KEY_TYPE_CMD:
+        return None
+    command = key.get("command")
+    argument = key.get("argument", 0)
+    name = names.get(command)
+    if name is None:
+        LOG.debug("ignoring unknown BrlAPI command %r", command)
+        return None
+    if command == api.KEY_CMD_PASSDOTS:
+        return BrailleGesture(
+            GESTURE_SOURCE,
+            name,
+            model,
+            dots=argument & 0xFF,
+            space=bool(argument & api.DOTC),
+            is_braille_input=True,
+        )
+    routing_index = argument if command == api.KEY_CMD_ROUTE else None
+    return BrailleGesture(GESTURE_SOURCE, name, model, routing_index=routing_index)
 
 
 class BrlApiOutput:
@@ -26,6 +96,10 @@ class BrlApiOutput:
         self._lock = threading.Lock()
         self._active = False
         self._last_cells: bytes | None = None
+        self._on_gesture: Callable[[BrailleGesture], None] | None = None
+        self._input_thread: threading.Thread | None = None
+        self._stop_input = threading.Event()
+        self.model: str | None = None
         try:
             self._connection.enterTtyModeWithPath()
             self._set_priority(PRIORITY_DISABLED)
@@ -35,6 +109,7 @@ class BrlApiOutput:
             self.num_cols = columns
             self.num_rows = rows
             self.num_cells = columns * rows
+            self.model = _driver_name(self._connection)
         except Exception:
             self._close_connection()
             raise
@@ -73,7 +148,62 @@ class BrlApiOutput:
             if self._active:
                 self._connection.writeDots(encoded)
 
+    def start_input(self, on_gesture: Callable[[BrailleGesture], None]) -> None:
+        """Forward display keys to ``on_gesture`` while the remote output is active.
+
+        Like NVDA's driver, keys are polled without blocking under the same
+        lock as ``writeDots``, and BrlAPI keysyms are left to BRLTTY (which
+        types them into the focused window, i.e. FreeRDP).
+        """
+        self._on_gesture = on_gesture
+        with self._lock:
+            self._connection.ignoreKeys(self._api.rangeType_type, (self._api.KEY_TYPE_SYM,))
+        self._input_thread = threading.Thread(
+            target=self._input_loop,
+            name="brlapi-keys",
+            daemon=True,
+        )
+        self._input_thread.start()
+        LOG.info("forwarding BrlAPI keys model=%r", self.model)
+
+    def _input_loop(self) -> None:
+        names = command_names(self._api)
+        while not self._stop_input.wait(KEY_POLL_INTERVAL):
+            self.poll_keys(names)
+
+    def poll_keys(self, names: dict[int, str]) -> None:
+        """Read pending keys once and forward them if the remote output is active."""
+        for key in self._read_keys():
+            gesture = translate_key(key, self._api, names, self.model)
+            if gesture is None or self._on_gesture is None:
+                continue
+            with self._lock:
+                active = self._active
+            if active:
+                self._on_gesture(gesture)
+            else:
+                LOG.debug("dropping braille gesture while idle: %s", gesture)
+
+    def _read_keys(self) -> list[dict[str, int]]:
+        keys: list[dict[str, int]] = []
+        with self._lock:
+            if self._connection is None:
+                return keys
+            while True:
+                try:
+                    code = self._connection.readKey(False)
+                except Exception as error:  # noqa: BLE001 - BrlAPI raises its own exception types.
+                    LOG.error("cannot read BrlAPI key: %s", error)
+                    break
+                if not code:
+                    break
+                keys.append(self._api.expandKeyCode(code))
+        return keys
+
     def close(self) -> None:
+        self._stop_input.set()
+        if self._input_thread is not None:
+            self._input_thread.join(timeout=1)
         with self._lock:
             try:
                 self._set_priority(PRIORITY_DISABLED)
@@ -102,6 +232,16 @@ class BrlApiOutput:
             connection.closeConnection()
         finally:
             self._connection = None
+
+
+def _driver_name(connection: Any) -> str | None:
+    try:
+        name = connection.driverName
+    except AttributeError, OSError, RuntimeError:
+        return None
+    if isinstance(name, bytes):
+        name = name.decode("utf-8", "replace")
+    return name or None
 
 
 class AtSpiFocusTracker:

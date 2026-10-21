@@ -1,6 +1,6 @@
 import pytest
 
-from client.rdaccess.language import system_language
+from nvda_rdp_linux.rdaccess.language import system_language
 
 
 @pytest.mark.parametrize(

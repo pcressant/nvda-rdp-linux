@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from client.rdaccess.audio import AudioOutput, make_tone_wav, resolve_wave_path
+from nvda_rdp_linux.rdaccess.audio import AudioOutput, make_tone_wav, resolve_wave_path
 
 
 def test_tone_wav_has_expected_length_and_channel_volumes() -> None:

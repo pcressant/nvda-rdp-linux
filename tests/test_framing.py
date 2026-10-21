@@ -1,4 +1,4 @@
-from client.rdaccess.framing import FrameDecoder, encode_frame
+from nvda_rdp_linux.rdaccess.framing import FrameDecoder, encode_frame
 
 
 def test_complete_frame() -> None:

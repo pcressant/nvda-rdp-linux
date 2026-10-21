@@ -1,6 +1,28 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nvda-rdp-linux"
+version = "0.2.0"
+description = "Linux client for NVDA's RDAccess: remote speech and braille over RDP"
+readme = "README.md"
+license = "GPL-2.0-or-later"
+license-files = ["LICENSE"]
+requires-python = ">=3.13"
+# speechd (Speech Dispatcher), brlapi (BRLTTY) and pyatspi are provided by the
+# system packages of those projects and are not installable from PyPI.
+dependencies = []
+
+[project.scripts]
+nvda-rdp-client = "nvda_rdp_linux.app:main"
+
+[tool.setuptools.packages.find]
+include = ["nvda_rdp_linux*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 
 [tool.ruff]
-target-version = "py314"
+target-version = "py313"
 line-length = 100

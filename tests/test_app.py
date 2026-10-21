@@ -4,7 +4,7 @@ from typing import Self
 
 import pytest
 
-from client.app import parse_arguments, serve
+from nvda_rdp_linux.app import parse_arguments, serve
 
 
 def test_language_and_channel_options() -> None:

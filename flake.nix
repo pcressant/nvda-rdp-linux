@@ -15,7 +15,10 @@
         system:
         import nixpkgs {
           inherit system;
-          overlays = [ (import ./overlays/brltty.nix) ];
+          overlays = [
+            self.overlays.brltty
+            self.overlays.default
+          ];
         };
       mkFreerdpWithNvdaRdp =
         pkgs:
@@ -76,30 +79,21 @@
           ]);
           source = pkgs.lib.fileset.toSource {
             root = ./.;
-            fileset = ./client;
+            fileset = ./nvda_rdp_linux;
           };
           launcher = pkgs.writeShellScriptBin "nvda-rdp-client" ''
             export PYTHONPATH="${source}:${clientPythonPath pkgs}"
             export GI_TYPELIB_PATH="${clientTypelibPath pkgs}''${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}"
             export PATH="${pkgs.lib.makeBinPath (clientTools pkgs)}:$PATH"
-            exec ${python}/bin/python -m client "$@"
+            exec ${python}/bin/python -m nvda_rdp_linux "$@"
           '';
-          unit = pkgs.writeTextDir "share/systemd/user/nvda-rdp-client.service" ''
-            [Unit]
-            Description=NVDA RDAccess client (remote speech and braille)
-            PartOf=graphical-session.target
-            After=graphical-session.target
-
-            [Service]
-            # Optional settings, e.g. NVDA_WAVES_DIR=... or NVDA_RDP_OPTIONS=...
-            EnvironmentFile=-%h/.config/nvda-rdp-linux/environment
-            ExecStart=${launcher}/bin/nvda-rdp-client ''$NVDA_RDP_OPTIONS
-            Restart=on-failure
-            RestartSec=2
-
-            [Install]
-            WantedBy=graphical-session.target
-          '';
+          # Same unit as distribution packages, pointing at the Nix launcher.
+          # lib/systemd/user is where NixOS's systemd.packages looks for units.
+          unit = pkgs.writeTextDir "lib/systemd/user/nvda-rdp-client.service" (
+            builtins.replaceStrings [ "/usr/bin/nvda-rdp-client" ] [ "${launcher}/bin/nvda-rdp-client" ] (
+              builtins.readFile ./packaging/systemd/nvda-rdp-client.service
+            )
+          );
         in
         pkgs.symlinkJoin {
           name = "nvda-rdp-linux-client";
@@ -110,6 +104,21 @@
         };
     in
     {
+      # Packages built from the consumer's nixpkgs, so that a NixOS
+      # configuration uses its own nixpkgs and overlays (BRLTTY included).
+      overlays.default = final: prev: {
+        nvda-rdp-client = mkClient final;
+        freerdp-with-nvda-rdp = mkFreerdpWithNvdaRdp final;
+        # Unmodified Remmina built against the FreeRDP variant that contains
+        # the plugin; enable it with the connection's advanced setting
+        # "Dynamic virtual channel" = nvda-rdp-dvc.
+        remmina-with-nvda-rdp = final.remmina.override { freerdp = final.freerdp-with-nvda-rdp; };
+      };
+
+      # BRLTTY with Polkit, for BrlAPI access; not part of overlays.default so
+      # that configurations keep control over their own BRLTTY.
+      overlays.brltty = import ./overlays/brltty.nix;
+
       devShells = forAllSystems (
         system:
         let
@@ -119,7 +128,6 @@
             pythonPackages.pyatspi
             pythonPackages.pygobject3
           ]);
-          freerdpWithNvdaRdp = mkFreerdpWithNvdaRdp pkgs;
         in
         {
           default = pkgs.mkShell {
@@ -131,7 +139,7 @@
                 cmake
                 ninja
                 pkg-config
-                freerdpWithNvdaRdp
+                freerdp-with-nvda-rdp
                 zlib # Required by FreeRDP-ClientConfig.cmake
 
                 # RDAccess client and tests
@@ -156,15 +164,10 @@
         system:
         let
           pkgs = pkgsFor system;
-          freerdpWithNvdaRdp = mkFreerdpWithNvdaRdp pkgs;
         in
         {
-          freerdp-with-nvda-rdp = freerdpWithNvdaRdp;
-          client = mkClient pkgs;
-          # Unmodified Remmina built against the FreeRDP variant that contains
-          # the plugin; enable it with the connection's advanced setting
-          # "Dynamic virtual channel" = nvda-rdp-dvc.
-          remmina-with-nvda-rdp = pkgs.remmina.override { freerdp = freerdpWithNvdaRdp; };
+          inherit (pkgs) freerdp-with-nvda-rdp remmina-with-nvda-rdp;
+          client = pkgs.nvda-rdp-client;
         }
       );
     };

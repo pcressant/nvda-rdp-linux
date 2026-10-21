@@ -1,34 +1,78 @@
 # NVDA RDP Linux
 
-NVDA RDP Linux is an experimental Linux prototype that receives speech and
-braille produced by NVDA/RDAccess in a Windows RDP session through FreeRDP and
-handles them locally with Speech Dispatcher and BRLTTY.
+NVDA RDP Linux lets a blind Linux user work in a Windows remote desktop with
+the remote NVDA screen reader, while hearing its speech and reading its braille
+locally. It is the Linux counterpart of the client side of
+[RDAccess](https://github.com/LeonarddeR/rdAccess), the NVDA add-on that sends
+speech and braille over RDP dynamic virtual channels.
 
-The project keeps the FreeRDP DVC plugin limited to raw transport. RDAccess
-protocol handling and local output live in a separate Python process.
+It has two parts:
 
-This is a proof of concept, not a finished production solution. Speech and
-braille output were tested in real sessions against RDAccess 2.0.0 (commit
-documented in [run.md](run.md)). The client side of RDAccess 2.0.5 is now
-implemented as well — speech commands (prosody, language, breaks), NVDA tones
-and sounds, driver settings management, braille display keys and braille
-keyboard input, Caps Lock synchronization and connection notifications — but
-these additions have not yet been tested against a real RDP session. RDAccess
-1.x compatibility and direct Orca integration are not implemented.
+* a small FreeRDP plugin (`nvda-rdp-dvc`) that only transports the
+  `NVDA-SPEECH` and `NVDA-BRAILLE` channels to local Unix sockets;
+* a Python client (`nvda-rdp-client`) that implements the RDAccess protocol
+  and renders it with Speech Dispatcher, PipeWire and BRLTTY.
 
-Development and builds have so far been performed and validated with Nix; a
-build outside the provided Nix environment has not yet been tested.
+Both `xfreerdp` and Remmina can be used, as long as they use a FreeRDP that
+contains the plugin.
 
-See [run.md](run.md) for architecture, build, test, usage, and diagnostic
-instructions.
+## Features
+
+* remote NVDA speech through Speech Dispatcher, with indexes (say all),
+  character mode, language switching, pitch/rate/volume changes and pauses;
+* NVDA beeps and sounds played locally (from a copy of NVDA's `waves`);
+* remote braille on the local BRLTTY display while the RDP window has focus,
+  handed back to Orca as soon as it loses focus;
+* braille display keys and routing keys sent back to the remote NVDA, with
+  NVDA's standard BRLTTY gesture map; braille keyboard input;
+* optional: remote control of the local voice settings from NVDA, Caps Lock
+  synchronization, connection notifications;
+* one user service for both channels, which keeps working if Speech
+  Dispatcher or BRLTTY is unavailable and reconnects to BRLTTY on its own.
+
+The voice and message language follows the locale (`LC_ALL`, `LC_MESSAGES`,
+`LANG`) unless `--language` is given.
+
+## Status
+
+Experimental. Real RDP sessions against RDAccess 2.0.4 (NVDA 2026.2) have
+confirmed speech, braille output, braille display keys and routing, NVDA
+sounds, Remmina, and the single client service. Driver settings management,
+Caps Lock synchronization, braille keyboard input and `pause_speech` are
+implemented and unit-tested, but not yet confirmed in a real session.
+RDAccess 1.x and direct Orca integration are not supported.
+
+## Installation
+
+* **Nix / NixOS**: the flake provides the dev shell, the `client` package with
+  its systemd user unit, a FreeRDP variant containing the plugin, and an
+  unmodified Remmina built against it (`remmina-with-nvda-rdp`).
+* **Arch Linux**: `packaging/arch/PKGBUILD` builds `nvda-rdp-linux-git`; it
+  installs the plugin into the system FreeRDP's plugin directory, so the
+  distribution's `xfreerdp` and Remmina find it without changes.
+* **Other distributions**: build the plugin with CMake against the system
+  FreeRDP 3 (it installs into FreeRDP's own plugin directory), install the
+  Python package with a PEP 517 tool, and install
+  `packaging/systemd/nvda-rdp-client.service` as a user unit.
+
+Then enable the client and, in your RDP client, add the dynamic virtual
+channel `nvda-rdp-dvc` (`/dvc:nvda-rdp-dvc` for `xfreerdp`, "Dynamic virtual
+channel" in Remmina's advanced settings):
+
+```bash
+systemctl --user enable --now nvda-rdp-client.service
+```
+
+See [run.md](run.md) for architecture, configuration, building, testing,
+packaging and diagnostics.
 
 ## Credits
 
-This prototype was inspired by and developed through studying the work of
+This project was inspired by and developed through studying the work of
 [Leonard de Ruijter on RDAccess](https://github.com/LeonarddeR/rdAccess).
 RDAccess provides the NVDA-side remote accessibility functionality and protocol
-behavior that made this experiment possible. Leonard de Ruijter did not
-participate in or endorse this prototype and is not responsible for it.
+behavior that made this project possible. Leonard de Ruijter did not
+participate in this project and is not responsible for it.
 
 ## Development note
 

@@ -9,8 +9,11 @@ when they differ from what was last applied.
 
 from __future__ import annotations
 
+import functools
 import logging
+import threading
 from collections.abc import Callable
+from typing import Any
 
 from . import settings
 from .protocol import DEFAULT_PROSODY, Prosody
@@ -39,7 +42,27 @@ def ssip_language_to_nvda(language: str) -> str:
     return language.replace("-", "_")
 
 
+def _locked(method: Callable[..., Any]) -> Callable[..., Any]:
+    """Serialize a method on the instance's lock (see ``SpeechDispatcherOutput``)."""
+
+    @functools.wraps(method)
+    def wrapper(self: SpeechDispatcherOutput, *args: Any, **kwargs: Any) -> Any:
+        with self._lock:
+            return method(self, *args, **kwargs)
+
+    return wrapper
+
+
 class SpeechDispatcherOutput:
+    """One SSIP connection shared by the speech and braille channel threads.
+
+    ``SSIPClient`` does not serialize commands sent from several threads, and
+    ``speak`` sends several commands that must stay together (language,
+    prosody, spelling, text); every public method therefore holds one lock.
+    Speech Dispatcher callbacks run on its own thread and only report indexes,
+    they never take this lock.
+    """
+
     def __init__(
         self,
         *,
@@ -51,6 +74,7 @@ class SpeechDispatcherOutput:
     ) -> None:
         from speechd.client import SSIPClient
 
+        self._lock = threading.RLock()
         self._client = SSIPClient(
             "nvda-rdp-linux",
             component="rdaccess",
@@ -82,6 +106,7 @@ class SpeechDispatcherOutput:
             ssip_rate,
         )
 
+    @_locked
     def speak(
         self,
         text: str,
@@ -119,6 +144,7 @@ class SpeechDispatcherOutput:
             text,
         )
 
+    @_locked
     def insert_break(self, milliseconds: int) -> None:
         from speechd.client import DataMode
 
@@ -129,10 +155,12 @@ class SpeechDispatcherOutput:
             self._client.set_data_mode(DataMode.TEXT)
         LOG.info("Speech Dispatcher accepted break of %d ms", milliseconds)
 
+    @_locked
     def cancel(self) -> None:
         self._client.cancel()
         LOG.info("Speech Dispatcher accepted cancel")
 
+    @_locked
     def pause(self, switch: bool) -> None:
         if switch:
             self._client.pause()
@@ -140,6 +168,7 @@ class SpeechDispatcherOutput:
             self._client.resume()
         LOG.info("Speech Dispatcher accepted %s", "pause" if switch else "resume")
 
+    @_locked
     def close(self) -> None:
         self._client.close()
         LOG.info("closed Speech Dispatcher connection")
@@ -165,6 +194,7 @@ class SpeechDispatcherOutput:
             self._voices = tuple(self._client.list_synthesis_voices())
         return self._voices
 
+    @_locked
     def available_languages(self) -> list[str | None]:
         """Encode like RDAccess's ``encodeAvailableLanguages``: sorted, None last."""
         languages: set[str | None] = {self._language}
@@ -174,6 +204,7 @@ class SpeechDispatcherOutput:
 
     # Driver settings management
 
+    @_locked
     def supported_settings(self, language: str) -> list[object]:
         result: list[object] = []
         if self._synthesis_voices():
@@ -190,6 +221,7 @@ class SpeechDispatcherOutput:
         )
         return result
 
+    @_locked
     def get_setting(self, setting_id: str) -> object:
         if setting_id in self._values:
             return self._values[setting_id]
@@ -197,6 +229,7 @@ class SpeechDispatcherOutput:
             return self._current_voice()
         raise KeyError(setting_id)
 
+    @_locked
     def set_setting(self, setting_id: str, value: object) -> bool:
         if setting_id in self._values:
             if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= 100:
@@ -212,6 +245,7 @@ class SpeechDispatcherOutput:
             return True
         return False
 
+    @_locked
     def available_values(self, setting_id: str) -> dict[str, object] | None:
         if setting_id != settings.SETTING_VOICE:
             return None

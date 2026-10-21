@@ -30,12 +30,22 @@ RDAccess protocol/bridge
 
 The project is currently experimental.
 
-Current effort (October 2026): bring the Linux client to feature parity with
-the client side of RDAccess 2.0.5 (`remoteSpeechHandler`,
-`remoteBrailleHandler`, `_remoteHandler`). At the user's request, all parity
-features are implemented in one pass, with unit tests, and validated by the
-user in a single real RDP session at the end. The RDAccess 1.x (pickle)
-protocol and direct Orca integration remain out of scope.
+The client implements the client side of RDAccess 2.0.5
+(`remoteSpeechHandler`, `remoteBrailleHandler`, `_remoteHandler`); `run.md`
+records which features were confirmed in real sessions. The RDAccess 1.x
+(pickle) protocol and direct Orca integration are out of scope.
+
+Layout:
+
+* `freerdp-plugin/`: FreeRDP DVC plugin (C), raw transport only;
+* `nvda_rdp_linux/`: Python client (`python -m nvda_rdp_linux`), one process
+  for both channels;
+* `packaging/`: distribution-neutral systemd user unit and Arch PKGBUILD;
+* `flake.nix`: dev shell and Nix packages.
+
+The project is meant to be packaged outside Nix too: keep the plugin building
+against any FreeRDP 3 through its CMake package, keep the client compatible
+with Python 3.13, and keep runtime dependencies to system packages.
 
 ## Environment
 

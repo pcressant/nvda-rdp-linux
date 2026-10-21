@@ -38,7 +38,7 @@ nix develop --command bash -c '
     echo "Using the running nvda-rdp-client user service."
     echo "Its log: journalctl --user -u nvda-rdp-client"
   else
-    python -m client "${client_options[@]}" > logs/nvda-rdp-client.log 2>&1 &
+    python -m nvda_rdp_linux "${client_options[@]}" > logs/nvda-rdp-client.log 2>&1 &
     client_pid=$!
 
     for _attempt in $(seq 1 50); do

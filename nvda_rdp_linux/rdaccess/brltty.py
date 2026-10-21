@@ -370,7 +370,7 @@ class ReconnectingBrailleDisplay:
 def _driver_name(connection: Any) -> str | None:
     try:
         name = connection.driverName
-    except AttributeError, OSError, RuntimeError:
+    except (AttributeError, OSError, RuntimeError):
         return None
     if isinstance(name, bytes):
         name = name.decode("utf-8", "replace")

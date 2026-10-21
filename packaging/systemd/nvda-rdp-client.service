@@ -1,0 +1,17 @@
+[Unit]
+Description=NVDA RDAccess client (remote speech and braille)
+Documentation=https://github.com/pcressant/nvda-rdp-linux
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+# Optional settings, one per line, for example:
+#   NVDA_WAVES_DIR=/path/to/a/copy/of/nvda/waves
+#   NVDA_RDP_OPTIONS=--settings-management --sync-caps-lock
+EnvironmentFile=-%h/.config/nvda-rdp-linux/environment
+ExecStart=/usr/bin/nvda-rdp-client $NVDA_RDP_OPTIONS
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

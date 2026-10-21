@@ -1,14 +1,18 @@
-# Getting Started with the NVDA/RDAccess Prototype
+# NVDA RDP Linux: Technical Guide
 
-This guide explains how to build, test, and experiment with the current prototype. Speech and braille output have been verified in real sessions against RDAccess 2.0.0 at the following exact commit:
+This guide explains the architecture, and how to build, test, package, use and
+diagnose the project.
 
-```text
-2da84e8496519cf23614c0cfb3ace61ee0f9cd95
-```
+The client implements the client side of RDAccess 2.0.5 (released
+2026-10-15). Validation history:
 
-The client now implements the client side of RDAccess 2.0.5 (released
-2026-10-15). The features added for 2.0.5 parity are covered by unit tests but
-have not yet been tested in a real RDP session.
+* the protocol captures in `tests/fixtures/` come from RDAccess 2.0.0, commit
+  `2da84e8496519cf23614c0cfb3ace61ee0f9cd95`;
+* real sessions against RDAccess 2.0.4 with NVDA 2026.2 confirmed speech,
+  braille output, braille display keys and routing, NVDA sounds, Remmina and
+  the single client service;
+* driver settings management, Caps Lock synchronization, braille keyboard input
+  and `pause_speech` are covered by unit tests only.
 
 ## Overview
 
@@ -41,22 +45,22 @@ Main files:
 * `flake.nix`: Nix environment and FreeRDP variant containing the plugin;
 * `freerdp-plugin/nvda_rdp_dvc.c`: DVC callbacks and Unix socket bridge;
 * `freerdp-plugin/CMakeLists.txt`: FreeRDP module build configuration;
-* `client/app.py`: client entry point (`python -m client`), running both
+* `nvda_rdp_linux/app.py`: client entry point (`python -m nvda_rdp_linux`), running both
   channels in one process and containing channel failures;
-* `client/rdaccess/ipc.py`: Unix socket and 32-bit framing;
-* `client/rdaccess/framing.py`: IPC frame reconstruction;
-* `client/rdaccess/session.py`: shared handshake, legacy/JSON stream parsing,
+* `nvda_rdp_linux/rdaccess/ipc.py`: Unix socket and 32-bit framing;
+* `nvda_rdp_linux/rdaccess/framing.py`: IPC frame reconstruction;
+* `nvda_rdp_linux/rdaccess/session.py`: shared handshake, legacy/JSON stream parsing,
   generic attributes (`supportedSettings`, versions, `capsLockToggle`);
-* `client/rdaccess/protocol.py`: `NVDA-SPEECH` messages and speech sequence
+* `nvda_rdp_linux/rdaccess/protocol.py`: `NVDA-SPEECH` messages and speech sequence
   rendering (indexes, character mode, language, prosody, breaks);
-* `client/rdaccess/speech.py`: persistent Speech Dispatcher connection and
+* `nvda_rdp_linux/rdaccess/speech.py`: persistent Speech Dispatcher connection and
   voice settings;
-* `client/rdaccess/settings.py`: JSON encoding of NVDA driver settings;
-* `client/rdaccess/audio.py`: NVDA tones and wave files through `pw-play`;
-* `client/rdaccess/braille.py`: `NVDA-BRAILLE` messages and gestures;
-* `client/rdaccess/brltty.py`: BrlAPI output, key input and AT-SPI focus;
-* `client/rdaccess/capslock.py`: optional Caps Lock synchronization;
-* `client/rdaccess/notify.py`: connection notifications;
+* `nvda_rdp_linux/rdaccess/settings.py`: JSON encoding of NVDA driver settings;
+* `nvda_rdp_linux/rdaccess/audio.py`: NVDA tones and wave files through `pw-play`;
+* `nvda_rdp_linux/rdaccess/braille.py`: `NVDA-BRAILLE` messages and gestures;
+* `nvda_rdp_linux/rdaccess/brltty.py`: BrlAPI output, key input and AT-SPI focus;
+* `nvda_rdp_linux/rdaccess/capslock.py`: optional Caps Lock synchronization;
+* `nvda_rdp_linux/rdaccess/notify.py`: connection notifications;
 * `tests/`: unit tests and fixtures captured from real exchanges;
 * `scripts/run-rdaccess-speech-session`: recommended complete launcher;
 
@@ -105,8 +109,8 @@ Inside `nix develop`:
 
 ```bash
 pytest -q
-ruff check client tests
-ruff format --check client tests
+ruff check nvda_rdp_linux tests
+ruff format --check nvda_rdp_linux tests
 clang-format --dry-run --Werror freerdp-plugin/nvda_rdp_dvc.c
 ```
 
@@ -132,7 +136,7 @@ export RDP_DOMAIN=workgroup  # Optional.
 The script:
 
 1. enters `nix develop`;
-2. starts the Python client (`python -m client`), unless the
+2. starts the Python client (`python -m nvda_rdp_linux`), unless the
    `nvda-rdp-client` user service is already running;
 3. waits for both Unix sockets to be created;
 4. launches FreeRDP and connects to the remote;
@@ -149,7 +153,7 @@ Optional environment variables:
 ```text
 NVDA_WAVES_DIR             copy of NVDA's waves directory (sounds); default:
                            nvda-waves/ at the repository root if present
-RDACCESS_CLIENT_OPTIONS    extra options for python -m client
+RDACCESS_CLIENT_OPTIONS    extra options for python -m nvda_rdp_linux
 ```
 
 Example:
@@ -183,8 +187,25 @@ its sockets when the DVCs open.
 
 ```bash
 nix profile install .#client
-systemctl --user link ~/.nix-profile/share/systemd/user/nvda-rdp-client.service
+systemctl --user link ~/.nix-profile/lib/systemd/user/nvda-rdp-client.service
 systemctl --user enable --now nvda-rdp-client.service
+```
+
+On NixOS, the flake's `overlays.default` adds `nvda-rdp-client`,
+`freerdp-with-nvda-rdp` and `remmina-with-nvda-rdp` to the configuration's own
+`pkgs` (its nixpkgs and overlays). `overlays.brltty` is the optional BRLTTY
+override with Polkit. NixOS ignores the unit's `[Install]` section, so the
+target is set in the configuration:
+
+```nix
+nixpkgs.overlays = [ inputs.nvda-rdp-linux.overlays.default ];
+environment.systemPackages = [
+  pkgs.nvda-rdp-client
+  pkgs.remmina-with-nvda-rdp # replaces remmina
+  pkgs.freerdp-with-nvda-rdp # replaces freerdp (xfreerdp)
+];
+systemd.packages = [ pkgs.nvda-rdp-client ];
+systemd.user.services.nvda-rdp-client.wantedBy = [ "graphical-session.target" ];
 ```
 
 Optional settings go in `~/.config/nvda-rdp-linux/environment`:
@@ -217,6 +238,44 @@ Both channels run in one process, so a failure on one must not stop the other:
   advertised, then the real size is pushed to the remote NVDA once known.
 
 `--no-speech` or `--no-braille` disable a channel entirely.
+
+## Packaging for Other Distributions
+
+The plugin and the client are independent of Nix:
+
+* **plugin**: `cmake -S freerdp-plugin -B build -DCMAKE_INSTALL_PREFIX=/usr`
+  builds against the system FreeRDP 3 and installs
+  `libnvda-rdp-dvc-client.so` into the plugin directory exported by FreeRDP's
+  CMake package (`FreeRDP_RELATIVE_PLUGIN_DIR`, e.g. `lib/freerdp3`). It must
+  be rebuilt when the system FreeRDP is upgraded to a new 3.x release.
+  `-DNVDA_RDP_PLUGIN_DIR=...` overrides the directory;
+* **client**: `pyproject.toml` builds the `nvda_rdp_linux` package and the
+  `nvda-rdp-client` command (Python 3.13 or later). Its runtime dependencies
+  come from system packages: the `speechd` module (Speech Dispatcher), the
+  `brlapi` module (BRLTTY), `pyatspi` with the AT-SPI typelib, PyGObject, and
+  `pw-play` (PipeWire);
+* **service**: `packaging/systemd/nvda-rdp-client.service` is installed as
+  `/usr/lib/systemd/user/nvda-rdp-client.service`; the flake generates the
+  same unit with the Nix launcher path. Users enable it themselves.
+
+### Arch Linux (AUR)
+
+`packaging/arch/PKGBUILD` builds `nvda-rdp-linux-git` from the Git
+repository, and `packaging/arch/.SRCINFO` is the matching AUR metadata
+(regenerate it with `makepkg --printsrcinfo > .SRCINFO` after editing the
+PKGBUILD). On Arch, the Python BrlAPI module is in `python-brltty` and
+`pw-play` in `pipewire-audio`.
+
+It was tested on 2026-10-21 in an Arch Linux root (official bootstrap image,
+FreeRDP 3.32.2, Python 3.14.8, run unprivileged with bubblewrap): `makepkg`
+built the package and ran the test suite, `namcap` reported only expected
+warnings (runtime dependencies it cannot detect, and the Python entry-point
+script), the installed client handled the real braille captures, and Arch's
+FreeRDP resolved `nvda-rdp-dvc` to `/usr/lib/freerdp3/`. It has not been run on
+an installed Arch system with a real RDP session.
+
+The package builds the default branch of the GitHub repository, so changes
+must be pushed there before the AUR package can pick them up.
 
 ## Using Remmina
 
@@ -257,7 +316,7 @@ First terminal:
 
 ```bash
 nix develop
-python -m client --log-level DEBUG
+python -m nvda_rdp_linux --log-level DEBUG
 ```
 
 The client should report that it is listening on:
@@ -320,7 +379,7 @@ configured.
 To experiment manually:
 
 ```bash
-python -m client --language fr_FR --rate 70 --output-module espeak-ng
+python -m nvda_rdp_linux --language fr_FR --rate 70 --output-module espeak-ng
 ```
 
 The rate uses Orca's 0–100 scale. The SSIP conversion is:
@@ -505,14 +564,14 @@ nix develop --command xfreerdp /list:kbd
 To experiment without mixing responsibilities:
 
 * DVC transport or socket connection: `freerdp-plugin/nvda_rdp_dvc.c`;
-* IPC framing: `client/rdaccess/framing.py` and `client/rdaccess/ipc.py`;
-* handshake and generic attributes: `client/rdaccess/session.py`;
-* new speech messages or commands: `client/rdaccess/protocol.py`;
-* braille messages and gestures: `client/rdaccess/braille.py`;
-* braille display keys: `client/rdaccess/brltty.py`;
-* tones and sounds: `client/rdaccess/audio.py`;
-* Speech Dispatcher rendering: `client/rdaccess/speech.py`;
-* client options and channel startup: `client/app.py`;
+* IPC framing: `nvda_rdp_linux/rdaccess/framing.py` and `nvda_rdp_linux/rdaccess/ipc.py`;
+* handshake and generic attributes: `nvda_rdp_linux/rdaccess/session.py`;
+* new speech messages or commands: `nvda_rdp_linux/rdaccess/protocol.py`;
+* braille messages and gestures: `nvda_rdp_linux/rdaccess/braille.py`;
+* braille display keys: `nvda_rdp_linux/rdaccess/brltty.py`;
+* tones and sounds: `nvda_rdp_linux/rdaccess/audio.py`;
+* Speech Dispatcher rendering: `nvda_rdp_linux/rdaccess/speech.py`;
+* client options and channel startup: `nvda_rdp_linux/app.py`;
 * FreeRDP options: `scripts/run-rdaccess-speech-session`;
 * reproducible cases: add a fixture first, then a test under `tests/`.
 
@@ -525,14 +584,13 @@ minimal modification
 pytest and lint
 C build if necessary
 real RDP test
-compare all three logs
+compare the FreeRDP and client logs
 ```
 
 ## Current Limitations
 
-* real-session validation covers RDAccess 2.0.0 speech output, indexes,
-  character mode, cancel and braille output; everything added for 2.0.5
-  parity is only unit-tested so far;
+* driver settings management, Caps Lock synchronization, braille keyboard
+  input and `pause_speech` have not been confirmed in a real session yet;
 * `pause_speech` is ignored unless `--enable-pause` is given, because
   `sd_espeak-ng` repeated the sentence after resuming;
 * NVDA sounds need a local copy of NVDA's `waves` directory;

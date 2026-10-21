@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from client.rdaccess.capslock import CapsLockSync
-from client.rdaccess.notify import ConnectionNotifier, message_for
+from nvda_rdp_linux.rdaccess.capslock import CapsLockSync
+from nvda_rdp_linux.rdaccess.notify import ConnectionNotifier, message_for
 
 
 class FakeBackend:

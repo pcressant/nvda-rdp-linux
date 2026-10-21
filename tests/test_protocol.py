@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from client.rdaccess.protocol import (
+from nvda_rdp_linux.rdaccess.protocol import (
     CONNECTION_XON,
     PROTOCOL_VERSION_2_LEGACY,
     JsonLineDecoder,

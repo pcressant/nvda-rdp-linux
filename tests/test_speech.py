@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import pytest
 
-from client.rdaccess.speech import SpeechDispatcherOutput, orca_rate_to_ssip
+from nvda_rdp_linux.rdaccess.speech import SpeechDispatcherOutput, orca_rate_to_ssip
 
 
 @pytest.mark.parametrize(
@@ -129,7 +131,7 @@ def rich_output(
 
 
 def test_prosody_and_language_are_applied_then_restored(rich_output) -> None:
-    from client.rdaccess.protocol import Prosody
+    from nvda_rdp_linux.rdaccess.protocol import Prosody
 
     output, client = rich_output
     output.speak("a", pitch=Prosody(offset=10), language="en_US", rate=Prosody(multiplier=2))
@@ -193,7 +195,7 @@ def test_settings_round_trip(rich_output) -> None:
 
 
 def test_numeric_setting_encoding_matches_nvda_fields() -> None:
-    from client.rdaccess.settings import NumericSetting, encode_numeric_setting
+    from nvda_rdp_linux.rdaccess.settings import NumericSetting, encode_numeric_setting
 
     name, state = encode_numeric_setting(NumericSetting("pitch"), "fr")
     assert name == "NumericDriverSetting"
@@ -211,3 +213,45 @@ def test_numeric_setting_encoding_matches_nvda_fields() -> None:
         "largeStep",
     }
     assert state["displayName"] == "Hauteur"
+
+
+def test_commands_from_two_threads_are_not_interleaved(rich_output) -> None:
+    import threading
+    import time
+
+    from nvda_rdp_linux.rdaccess.protocol import Prosody
+
+    output, client = rich_output
+    barrier = threading.Barrier(2)
+
+    def yielding(method):
+        def call(*args, **kwargs):
+            method(*args, **kwargs)
+            time.sleep(0.0002)  # let the other thread run, like a real socket round trip
+
+        return call
+
+    client.speak = yielding(client.speak)
+    client.set_pitch = yielding(client.set_pitch)
+
+    def worker(text: str, offset: int) -> None:
+        barrier.wait()
+        for _ in range(50):
+            output.speak(text, pitch=Prosody(offset=offset))
+
+    threads = [
+        threading.Thread(target=worker, args=("speech", 10)),
+        threading.Thread(target=worker, args=("braille", 0)),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    # Each speak must be directly preceded by its own spelling reset, and the
+    # pitch in force for "speech" must always be the +10 one (SSIP +20).
+    pitch = 0
+    for call in client.calls:
+        if call[0] == "pitch":
+            pitch = call[1]
+        elif call[0] == "speak":
+            assert pitch == (20 if call[1] == "speech" else 0)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from client.rdaccess.brltty import (
+from nvda_rdp_linux.rdaccess.brltty import (
     AtSpiFocusTracker,
     BrlApiOutput,
     command_names,
@@ -241,7 +241,7 @@ class FakeDisplayOutput:
 
 
 def test_reconnecting_display_falls_back_until_brlapi_answers() -> None:
-    from client.rdaccess.brltty import ReconnectingBrailleDisplay
+    from nvda_rdp_linux.rdaccess.brltty import ReconnectingBrailleDisplay
 
     attempts: list[FakeDisplayOutput] = []
 

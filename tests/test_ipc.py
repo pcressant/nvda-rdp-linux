@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from client.rdaccess.framing import encode_frame
-from client.rdaccess.ipc import UnixFrameServer, receive_frames
+from nvda_rdp_linux.rdaccess.framing import encode_frame
+from nvda_rdp_linux.rdaccess.ipc import UnixFrameServer, receive_frames
 
 
 def test_socket_permissions_and_framing(tmp_path: Path) -> None:

@@ -14,3 +14,7 @@ __pycache__/
 
 # Local copy of NVDA sounds (GPL, from an NVDA installation); not distributed here.
 /nvda-waves/
+
+# Python packaging
+/dist/
+*.egg-info/

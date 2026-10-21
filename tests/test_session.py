@@ -10,10 +10,10 @@ import json
 
 import pytest
 
-from client.rdaccess.braille import PROTOCOL_VERSION_2_LEGACY as BRAILLE_VERSION
-from client.rdaccess.braille import BrailleProtocolSession
-from client.rdaccess.protocol import PROTOCOL_VERSION_2_LEGACY as SPEECH_VERSION
-from client.rdaccess.session import CONNECTION_XON, legacy_protocol_version_frame
+from nvda_rdp_linux.rdaccess.braille import PROTOCOL_VERSION_2_LEGACY as BRAILLE_VERSION
+from nvda_rdp_linux.rdaccess.braille import BrailleProtocolSession
+from nvda_rdp_linux.rdaccess.protocol import PROTOCOL_VERSION_2_LEGACY as SPEECH_VERSION
+from nvda_rdp_linux.rdaccess.session import CONNECTION_XON, legacy_protocol_version_frame
 
 
 def test_legacy_version_frames_match_real_captures() -> None:

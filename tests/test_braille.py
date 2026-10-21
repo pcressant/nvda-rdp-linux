@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from client.rdaccess.braille import (
+from nvda_rdp_linux.rdaccess.braille import (
     CONNECTION_XON,
     PROTOCOL_VERSION_2_LEGACY,
     BrailleProtocolSession,
@@ -150,7 +150,7 @@ def test_braille_reconnect_sends_xon_and_resets_partial_json() -> None:
 
 
 def test_gesture_map_is_advertised_when_braille_input_is_enabled() -> None:
-    from client.rdaccess.brltty import BRLTTY_GESTURE_MAP
+    from nvda_rdp_linux.rdaccess.brltty import BRLTTY_GESTURE_MAP
 
     sent: list[bytes] = []
     session = BrailleProtocolSession(send=sent.append, gesture_map=BRLTTY_GESTURE_MAP)
@@ -163,7 +163,7 @@ def test_gesture_map_is_advertised_when_braille_input_is_enabled() -> None:
 
 
 def test_gestures_are_sent_as_braille_input() -> None:
-    from client.rdaccess.braille import BrailleGesture
+    from nvda_rdp_linux.rdaccess.braille import BrailleGesture
 
     sent: list[bytes] = []
     session = BrailleProtocolSession(send=sent.append)

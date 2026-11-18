@@ -114,9 +114,11 @@ class FakeRegistry:
         pass
 
 
-def event(event_type: str, application_name: str, window_name: str = ""):
-    application = SimpleNamespace(name=application_name)
-    source = SimpleNamespace(name=window_name, getApplication=lambda: application)
+def event(event_type: str, application_name: str, window_name: str = "", source=None):
+    """An AT-SPI window event; pass ``source`` to target an existing window."""
+    if source is None:
+        application = SimpleNamespace(name=application_name)
+        source = SimpleNamespace(name=window_name, getApplication=lambda: application)
     return SimpleNamespace(type=event_type, source=source)
 
 
@@ -136,12 +138,40 @@ def test_focus_tracker_yields_on_alt_tab() -> None:
 def test_focus_tracker_recognizes_freerdp_xwayland_frame() -> None:
     states: list[bool] = []
     tracker = AtSpiFocusTracker(states.append, registry=FakeRegistry())
+    activate = event("window:activate", "mutter-x11-frames", "FreeRDP: windows-remote")
+    tracker._on_window_event(activate)
     tracker._on_window_event(
-        event("window:activate", "mutter-x11-frames", "FreeRDP: windows-remote")
+        event("window:deactivate", "mutter-x11-frames", "FreeRDP: windows-remote", activate.source)
     )
-    tracker._on_window_event(
-        event("window:deactivate", "mutter-x11-frames", "FreeRDP: windows-remote")
-    )
+    assert states == [True, False]
+
+
+def test_focus_tracker_keeps_focus_when_remmina_switches_to_full_screen() -> None:
+    """Remmina moves the session to a new window; the old one deactivates late."""
+    states: list[bool] = []
+    tracker = AtSpiFocusTracker(states.append, registry=FakeRegistry())
+    old = event("window:activate", "org.remmina.Remmina", "work")
+    tracker._on_window_event(old)
+    tracker._on_window_event(event("window:activate", "org.remmina.Remmina", "work"))
+    tracker._on_window_event(event("window:deactivate", "org.remmina.Remmina", "work", old.source))
+    assert states == [True]
+
+    tracker._on_window_event(event("window:activate", "gnome-shell", "Main stage"))
+    assert states == [True, False]
+
+
+def test_focus_tracker_close_survives_a_vanished_atspi_bus() -> None:
+    class VanishedRegistry(FakeRegistry):
+        def deregisterEventListener(self, callback, event_type) -> None:
+            raise RuntimeError("Did not receive a reply")
+
+        def stop(self) -> None:
+            raise RuntimeError("Did not receive a reply")
+
+    states: list[bool] = []
+    tracker = AtSpiFocusTracker(states.append, registry=VanishedRegistry())
+    tracker._on_window_event(event("window:activate", "remmina"))
+    tracker.close()
     assert states == [True, False]
 
 

@@ -22,13 +22,21 @@ contains the plugin.
   character mode, language switching, pitch/rate/volume changes and pauses;
 * NVDA beeps and sounds played locally (from a copy of NVDA's `waves`);
 * remote braille on the local BRLTTY display while the RDP window has focus,
-  handed back to Orca as soon as it loses focus;
+  handed back to Orca as soon as it loses focus; the BrlAPI priority (80 by
+  default, `--brlapi-priority`) stays above Orca's, flat review included;
+* remote speech stopped when the RDP window loses focus, so that it does not
+  talk over Orca (`--keep-speech-on-blur` keeps it going);
 * braille display keys and routing keys sent back to the remote NVDA, with
   NVDA's standard BRLTTY gesture map; braille keyboard input;
 * optional: remote control of the local voice settings from NVDA, Caps Lock
   synchronization, connection notifications;
 * one user service for both channels, which keeps working if Speech
-  Dispatcher or BRLTTY is unavailable and reconnects to BRLTTY on its own.
+  Dispatcher or BRLTTY is unavailable and reconnects to BRLTTY on its own;
+  the plugin reconnects to the service when it restarts during a session.
+
+Logs stay short at the default `INFO` level. Spoken text, braille cells and
+gestures are only logged with `--log-level DEBUG`; the plugin dumps every DVC
+block only when `NVDA_RDP_DVC_DEBUG` is set in the RDP client's environment.
 
 The voice and message language follows the locale (`LC_ALL`, `LC_MESSAGES`,
 `LANG`) unless `--language` is given.

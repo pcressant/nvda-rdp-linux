@@ -23,6 +23,7 @@ from .rdaccess.braille import BrailleGesture, BrailleProtocolSession
 from .rdaccess.brltty import (
     BRLTTY_GESTURE_MAP,
     DEFAULT_FOCUS_APPLICATIONS,
+    PRIORITY_REMOTE_ACTIVE,
     AtSpiFocusTracker,
     ReconnectingBrailleDisplay,
 )
@@ -78,6 +79,12 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="let the remote NVDA read and change the local voice settings",
     )
+    speech.add_argument(
+        "--keep-speech-on-blur",
+        action="store_true",
+        help="keep remote speech going when the RDP client loses focus "
+        "(default: stop it, as NVDA's cancel would)",
+    )
 
     braille = parser.add_argument_group("braille")
     braille.add_argument("--no-braille", action="store_true", help="do not handle NVDA-BRAILLE")
@@ -88,13 +95,13 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     )
     braille.add_argument("--cells", type=int, default=40, help="size until BrlAPI answers")
     braille.add_argument("--rows", type=int, default=1)
-    braille.add_argument("--brlapi-priority", type=int, default=60)
+    braille.add_argument("--brlapi-priority", type=int, default=PRIORITY_REMOTE_ACTIVE)
     braille.add_argument(
         "--no-braille-input",
         action="store_true",
         help="do not forward braille display keys to the remote NVDA",
     )
-    braille.add_argument(
+    parser.add_argument(
         "--focus-application",
         action="append",
         help="window or application name of the RDP client; repeatable "
@@ -178,6 +185,7 @@ def main(argv: list[str] | None = None) -> None:
         on_caps_lock = caps_lock.set_remote_state if caps_lock is not None else None
 
         threads: list[threading.Thread] = []
+        speech_holder: list[ProtocolSession | None] = [None]
         if speech_output is not None:
             stack.callback(speech_output.close)
             speech_server = stack.enter_context(UnixFrameServer(default_socket_path()))
@@ -204,6 +212,7 @@ def main(argv: list[str] | None = None) -> None:
                             speak=speak,
                             audio=audio,
                         ),
+                        lambda session: speech_holder.__setitem__(0, session),
                     ),
                     name="speech",
                     daemon=True,
@@ -238,13 +247,17 @@ def main(argv: list[str] | None = None) -> None:
                 display.on_dimensions_changed = push_dimensions
                 display.start()
 
-        if display is not None or caps_lock is not None:
+        stop_speech_on_blur = speech_output is not None and not args.keep_speech_on_blur
+        if display is not None or caps_lock is not None or stop_speech_on_blur:
 
             def on_focus_changed(active: bool) -> None:
                 if display is not None:
                     display.set_active(active)
                 if caps_lock is not None:
                     caps_lock.set_remote_focused(active)
+                speech_session = speech_holder[0]
+                if not active and stop_speech_on_blur and speech_session is not None:
+                    speech_session.stop_speech()
 
             focus_tracker = AtSpiFocusTracker(
                 on_focus_changed,

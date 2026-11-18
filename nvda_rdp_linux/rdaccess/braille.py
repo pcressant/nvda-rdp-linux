@@ -125,7 +125,7 @@ class BrailleProtocolSession(RdAccessSession):
         ):
             LOG.error("invalid braille display cells=%r", cells)
             return True
-        LOG.info("braille display %d cells: %s", len(cells), " ".join(f"{c:02x}" for c in cells))
+        LOG.debug("braille display %d cells: %s", len(cells), " ".join(f"{c:02x}" for c in cells))
         if self._output is not None:
             self._output.display(cells)
         return True
@@ -162,5 +162,5 @@ class BrailleProtocolSession(RdAccessSession):
             fields["space"] = gesture.space
         sent = self.send_message(MESSAGE_BRAILLE_INPUT, **fields)
         if sent:
-            LOG.info("sent braille gesture %s", fields)
+            LOG.debug("sent braille gesture %s", fields)
         return sent

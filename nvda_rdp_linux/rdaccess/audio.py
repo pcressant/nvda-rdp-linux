@@ -108,19 +108,19 @@ class AudioOutput:
         if not 0 < hz <= 20000 or not 0 < length <= MAX_TONE_MS:
             LOG.error("refusing tone hz=%r length=%r", hz, length)
             return False
-        LOG.info("playing tone hz=%s length=%d left=%d right=%d", hz, length, left, right)
+        LOG.debug("playing tone hz=%s length=%d left=%d right=%d", hz, length, left, right)
         self._play(lambda: make_tone_wav(hz, length, left, right), f"tone {hz} Hz")
         return True
 
     def wave(self, file_name: str) -> bool:
         if self._waves_dir is None:
-            LOG.info("no NVDA waves directory configured; not playing %r", file_name)
+            LOG.debug("no NVDA waves directory configured; not playing %r", file_name)
             return False
         path = resolve_wave_path(self._waves_dir, file_name)
         if path is None:
             LOG.warning("refusing or missing NVDA wave file %r", file_name)
             return False
-        LOG.info("playing wave %s", path)
+        LOG.debug("playing wave %s", path)
         self._play(lambda: _read_wave(path), str(path))
         return True
 

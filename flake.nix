@@ -144,7 +144,7 @@
         pkgs:
         pkgs.stdenv.mkDerivation {
           pname = "nvda-rdp-grd-preload";
-          version = "0.2.0";
+          version = "0.3.0";
           src = ./grd-preload;
           nativeBuildInputs = [
             pkgs.cmake

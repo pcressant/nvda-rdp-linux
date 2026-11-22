@@ -29,7 +29,7 @@ let
 in
 pkgs.stdenvNoCC.mkDerivation {
   pname = "nvda-rdp-server";
-  version = "0.2.0";
+  version = "0.3.0";
   src = ../packaging/server;
 
   dontConfigure = true;

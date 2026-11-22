@@ -1,6 +1,11 @@
-nvda-rdp-linux (0.2.0) unstable; urgency=medium
+nvda-rdp-linux (0.3.0) unstable; urgency=medium
 
+  * New server side: NVDA on Windows, with RDAccess and mstsc, speaks and
+    shows the braille of Orca in a GNOME 49+ session served by GNOME
+    Remote Desktop, the remote login screen included.
   * Split into nvda-rdp-common, nvda-rdp-freerdp-plugin, nvda-rdp-client
     and nvda-rdp-server.
+  * Man pages nvda-rdp-client(1) and nvda-rdp-server(7), with French
+    translations.
 
- -- Patrick Cressant <patrick.cressant@gmail.com>  Sun, 22 Nov 2026 12:00:00 +0100
+ -- Patrick Cressant <patrick.cressant@gmail.com>  Sun, 22 Nov 2026 17:00:23 +0100

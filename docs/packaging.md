@@ -107,7 +107,7 @@ The PKGBUILD builds the default branch of the GitHub repository
    `nvda-rdp-linux-git` and push it.
 
 `pkgver` is computed from Git: from the latest tag (`vX.Y.Z` gives
-`X.Y.Z.rN.gHASH`), or, while the repository has no tag, `0.2.0.rN.gHASH`; bump
+`X.Y.Z.rN.gHASH`), or, while the repository has no tag, `0.3.0.rN.gHASH`; bump
 that fallback and `pkgver=` together. The old single package
 `nvda-rdp-linux-git` is replaced by `nvda-rdp-freerdp-plugin-git` and
 `nvda-rdp-client-git`.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nvda-rdp-linux"
-version = "0.2.0"
+version = "0.3.0"
 description = "Linux client for NVDA's RDAccess: remote speech and braille over RDP"
 readme = "README.md"
 license = "GPL-2.0-or-later"

@@ -5,7 +5,10 @@ nvda-rdp-linux (0.3.0) unstable; urgency=medium
     Remote Desktop, the remote login screen included.
   * Split into nvda-rdp-common, nvda-rdp-freerdp-plugin, nvda-rdp-client
     and nvda-rdp-server.
+  * Client: remote braille kept through Remmina's full screen, BrlAPI
+    priority 80, remote speech stopped when the RDP client loses focus,
+    plugin reconnection, spoken content logged at DEBUG only.
   * Man pages nvda-rdp-client(1) and nvda-rdp-server(7), with French
     translations.
 
- -- Patrick Cressant <patrick.cressant@gmail.com>  Sun, 22 Nov 2026 17:00:23 +0100
+ -- Patrick Cressant <patrick.cressant@gmail.com>  Sun, 22 Nov 2026 18:14:08 +0100

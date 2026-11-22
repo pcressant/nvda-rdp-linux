@@ -9,9 +9,12 @@ deterministically; ``ssip_events`` lists them (default ``["end"]``).  Option
 
 from __future__ import annotations
 
+import re
 from enum import Enum
 
 import golden_trace
+
+_MARK = re.compile(r'<mark name="([^"]*)"/>')
 
 
 class CallbackType(str, Enum):
@@ -46,8 +49,16 @@ class SSIPClient:
 
     def speak(self, text: str, callback=None, event_types=None) -> None:
         golden_trace.record("ssip", "speak", text, callback is not None, _plain(event_types))
-        if callback is not None and golden_trace.option("ssip_auto_end", True):
-            for event in golden_trace.option("ssip_events", ["end"]):
+        if callback is None or not golden_trace.option("ssip_auto_end", True):
+            return
+        requested = {_plain(event) for event in event_types or ()}
+        for event in golden_trace.option("ssip_events", ["begin", "index_marks", "end"]):
+            if requested and event not in requested:
+                continue
+            if event == CallbackType.INDEX_MARK.value:
+                for name in _MARK.findall(text):
+                    callback(CallbackType.INDEX_MARK, index_mark=name)
+            else:
                 callback(CallbackType(event))
 
     def list_synthesis_voices(self) -> list[tuple[str, str, str]]:

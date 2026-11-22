@@ -35,6 +35,7 @@ step 11: {"send": "speech", "hex": "13"}
 step 12: {"module": ["SPEAK", "<speak>local</speak>", "."]}
   module <- {"line": "202 OK RECEIVING MESSAGE"}
   module <- {"line": "200 OK SPEAKING"}
+  module <- {"line": "701 BEGIN"}
   module <- {"line": "702 END"}
   trace {"src": "ssip", "call": "connect", "args": [["nvda-rdp"], {"component": "fallback"}]}
   trace {"src": "ssip", "call": "set_data_mode", "args": ["ssml"]}

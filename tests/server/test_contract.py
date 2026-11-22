@@ -206,13 +206,28 @@ def test_xoff_detaches_and_xon_negotiates_again(braille) -> None:
 class Voice:
     def __init__(self) -> None:
         self.spoken: list[tuple[str, dict[str, object]]] = []
+        self.marks: list[tuple[tuple[int, str], ...]] = []
         self.pending: list[Callable[[], None]] = []
         self.cancelled = 0
 
     def speak(
-        self, text: str, *, on_done: Callable[[], None] | None = None, **state: object
+        self,
+        text: str,
+        *,
+        marks: tuple[tuple[int, str], ...] = (),
+        on_begin: Callable[[], None] | None = None,
+        on_mark: Callable[[str], None] | None = None,
+        on_done: Callable[[], None] | None = None,
+        **state: object,
     ) -> None:
+        # Report events as a synthesizer would: begin, each mark, end.
         self.spoken.append((text, state))
+        self.marks.append(marks)
+        if on_begin is not None:
+            self.pending.append(on_begin)
+        for _offset, name in marks:
+            if on_mark is not None:
+                self.pending.append(lambda name=name: on_mark(name))
         if on_done is not None:
             self.pending.append(on_done)
 
@@ -257,7 +272,7 @@ def test_speech_prosody_and_indexes_round_trip(speech) -> None:
         ["IndexCommand", {"index": 3}],
     ]
     channel.send("speak", sequence=sequence)
-    link.until(lambda: len(voice.spoken) == 2)
+    link.until(lambda: len(voice.spoken) == 1)
     state = {
         "character_mode": False,
         "language": "en_US",
@@ -265,7 +280,9 @@ def test_speech_prosody_and_indexes_round_trip(speech) -> None:
         "pitch": Prosody(offset=10),
         "volume": Prosody(multiplier=0.5),
     }
-    assert voice.spoken == [("Hello ", state), ("world", state)]
+    # One message: a pause between words otherwise.
+    assert voice.spoken == [("Hello world", state)]
+    assert voice.marks == [((6, "2"),)]
 
     for done in voice.pending:
         done()

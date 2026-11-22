@@ -255,3 +255,40 @@ def test_commands_from_two_threads_are_not_interleaved(rich_output) -> None:
             pitch = call[1]
         elif call[0] == "speak":
             assert pitch == (20 if call[1] == "speech" else 0)
+
+
+def test_marks_are_sent_as_ssml_and_reported(rich_output) -> None:
+    from speechd.client import CallbackType, DataMode
+
+    output, client = rich_output
+    events: list[object] = []
+    output.speak(
+        "un & deux",
+        marks=((3, "7"),),
+        on_begin=lambda: events.append("begin"),
+        on_mark=events.append,
+        on_done=lambda: events.append("end"),
+    )
+    assert client.calls[:3] == [
+        ("spelling", False),
+        ("data_mode", DataMode.SSML),
+        (
+            "speak",
+            '<speak>un <mark name="7"/>&amp; deux</speak>',
+            client.calls[2][2],
+            (CallbackType.BEGIN, CallbackType.INDEX_MARK, CallbackType.END),
+        ),
+    ]
+    assert client.calls[3:] == [("data_mode", DataMode.TEXT)]
+    callback = client.calls[2][2]
+    callback(CallbackType.BEGIN)
+    callback(CallbackType.INDEX_MARK, index_mark="7")
+    callback(CallbackType.END)
+    assert events == ["begin", "7", "end"]
+
+
+def test_text_without_marks_stays_plain_text(rich_output) -> None:
+    output, client = rich_output
+    output.speak("a < b", on_begin=lambda: None)
+    assert [call[0] for call in client.calls] == ["spelling", "speak"]
+    assert client.calls[1][1] == "a < b"

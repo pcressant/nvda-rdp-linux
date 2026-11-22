@@ -22,9 +22,9 @@ step 4: {"send": "speech", "json": [{"type": "speak", "sequence": ["long texte",
   speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
   trace {"src": "ssip", "call": "set_pitch", "args": [20]}
   trace {"src": "ssip", "call": "set_spelling", "args": [false]}
-  trace {"src": "ssip", "call": "speak", "args": ["long texte", true, ["end"]]}
-  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
-  trace {"src": "ssip", "call": "speak", "args": [" suite", true, ["end"]]}
+  trace {"src": "ssip", "call": "set_data_mode", "args": ["ssml"]}
+  trace {"src": "ssip", "call": "speak", "args": ["<speak>long texte<mark name=\"1\"/> suite</speak>", true, ["index_marks", "end"]]}
+  trace {"src": "ssip", "call": "set_data_mode", "args": ["text"]}
 step 5: {"send": "speech", "json": [{"type": "cancel"}]}
   speech <- {"text": "{\"index\": 0, \"type\": \"index\"}\n"}
   speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}

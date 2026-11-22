@@ -10,6 +10,7 @@ when they differ from what was last applied.
 from __future__ import annotations
 
 import functools
+import html
 import logging
 import threading
 from collections.abc import Callable
@@ -40,6 +41,19 @@ def nvda_language_to_ssip(language: str) -> str:
 
 def ssip_language_to_nvda(language: str) -> str:
     return language.replace("-", "_")
+
+
+def ssml_with_marks(text: str, marks: tuple[tuple[int, str], ...]) -> str:
+    """``text`` as an SSML document with a ``<mark/>`` at each (offset, name)."""
+    parts = ["<speak>"]
+    position = 0
+    for offset, name in sorted(marks, key=lambda mark: mark[0]):
+        parts.append(html.escape(text[position:offset], quote=False))
+        parts.append(f'<mark name="{html.escape(name)}"/>')
+        position = max(position, offset)
+    parts.append(html.escape(text[position:], quote=False))
+    parts.append("</speak>")
+    return "".join(parts)
 
 
 def _locked(method: Callable[..., Any]) -> Callable[..., Any]:
@@ -116,31 +130,55 @@ class SpeechDispatcherOutput:
         pitch: Prosody = DEFAULT_PROSODY,
         rate: Prosody = DEFAULT_PROSODY,
         volume: Prosody = DEFAULT_PROSODY,
+        marks: tuple[tuple[int, str], ...] = (),
+        on_begin: Callable[[], None] | None = None,
+        on_mark: Callable[[str], None] | None = None,
         on_done: Callable[[], None] | None = None,
     ) -> None:
-        from speechd.client import CallbackType
+        """Speak ``text`` as one Speech Dispatcher message.
 
-        def callback(event_type: str, **_kwargs: object) -> None:
-            if event_type == CallbackType.END and on_done is not None:
-                on_done()
+        ``marks`` are (offset in ``text``, name) pairs: the message is then
+        sent as SSML with a ``<mark/>`` at each offset, and ``on_mark``
+        receives each name when the synthesizer reaches it.
+        """
+        from speechd.client import CallbackType, DataMode
+
+        handlers: dict[object, Callable[..., None]] = {}
+        if on_begin is not None:
+            handlers[CallbackType.BEGIN] = lambda **_kwargs: on_begin()
+        if marks and on_mark is not None:
+            handlers[CallbackType.INDEX_MARK] = lambda index_mark="", **_kwargs: on_mark(index_mark)
+        if on_done is not None:
+            handlers[CallbackType.END] = lambda **_kwargs: on_done()
+
+        def callback(event_type: object, **kwargs: object) -> None:
+            handler = handlers.get(event_type)
+            if handler is not None:
+                handler(**kwargs)
 
         self._apply_language(language or self._language)
         self._apply_prosody(settings.SETTING_PITCH, pitch)
         self._apply_prosody(settings.SETTING_RATE, rate)
         self._apply_prosody(settings.SETTING_VOLUME, volume)
         self._client.set_spelling(character_mode)
+        ssml = bool(marks) and not character_mode
+        if ssml:
+            self._client.set_data_mode(DataMode.SSML)
         try:
             self._client.speak(
-                text,
-                callback=callback if on_done is not None else None,
-                event_types=(CallbackType.END,) if on_done is not None else None,
+                ssml_with_marks(text, marks) if ssml else text,
+                callback=callback if handlers else None,
+                event_types=tuple(handlers) if handlers else None,
             )
         finally:
+            if ssml:
+                self._client.set_data_mode(DataMode.TEXT)
             if character_mode:
                 self._client.set_spelling(False)
         LOG.debug(
-            "Speech Dispatcher accepted speak character_mode=%s text=%r",
+            "Speech Dispatcher accepted speak character_mode=%s marks=%d text=%r",
             character_mode,
+            len(marks),
             text,
         )
 

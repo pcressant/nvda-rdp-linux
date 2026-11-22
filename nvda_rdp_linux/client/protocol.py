@@ -77,6 +77,9 @@ class SpeechOutput(Protocol):
         pitch: Prosody = DEFAULT_PROSODY,
         rate: Prosody = DEFAULT_PROSODY,
         volume: Prosody = DEFAULT_PROSODY,
+        marks: tuple[tuple[int, str], ...] = (),
+        on_begin: Callable[[], None] | None = None,
+        on_mark: Callable[[str], None] | None = None,
         on_done: Callable[[], None] | None = None,
     ) -> None: ...
 
@@ -107,8 +110,13 @@ class SpeechCommand:
 class SpeechSegment:
     """One Speech Dispatcher message and the state it is spoken with.
 
-    ``indexes`` are reported to the remote NVDA once this segment has been
-    spoken; ``break_before_ms`` is silence inserted before it.
+    Indexes do not split a message: Orca marks every word, and one Speech
+    Dispatcher message per word puts a pause between words.  They are
+    reported to the remote NVDA when the synthesizer reaches them:
+    ``leading_indexes`` when the message begins, ``marks`` (offset in
+    ``text``, index) at an SSML mark inside the text, ``indexes`` once the
+    message has been spoken.  ``break_before_ms`` is silence inserted before
+    it.
     """
 
     text: str
@@ -119,6 +127,38 @@ class SpeechSegment:
     volume: Prosody = DEFAULT_PROSODY
     indexes: tuple[int, ...] = ()
     break_before_ms: int = 0
+    leading_indexes: tuple[int, ...] = ()
+    marks: tuple[tuple[int, int], ...] = ()
+
+    @property
+    def all_indexes(self) -> tuple[int, ...]:
+        return (*self.leading_indexes, *(index for _offset, index in self.marks), *self.indexes)
+
+
+def _place_indexes(segment: SpeechSegment, marks: list[tuple[int, int]]) -> SpeechSegment:
+    """Sort marks into leading, inner and trailing indexes of ``segment.text``.
+
+    A mark with only whitespace before it is reached when the message begins,
+    one with only whitespace after it when the message ends.
+    """
+    text = segment.text
+    leading = list(segment.leading_indexes)
+    inner: list[tuple[int, int]] = []
+    trailing: list[int] = []
+    for offset, index in marks:
+        offset = max(0, min(len(text), offset))
+        if not text[:offset].strip():
+            leading.append(index)
+        elif not text[offset:].strip():
+            trailing.append(index)
+        else:
+            inner.append((offset, index))
+    return replace(
+        segment,
+        leading_indexes=tuple(leading),
+        marks=tuple(inner),
+        indexes=(*trailing, *segment.indexes),
+    )
 
 
 @dataclass(frozen=True)
@@ -144,36 +184,46 @@ def render_sequence(sequence: object) -> RenderedSequence:
 
     Items are plain strings or ``[CommandClassName, __dict__]`` pairs, as
     produced by RDAccess's serializer.  A new segment starts whenever the
-    voice state changes, at each index and at each utterance end.
+    voice state changes and at each utterance end; indexes are placed inside
+    the segment they occur in (see ``SpeechSegment``).
     """
     if not isinstance(sequence, list):
         raise TypeError("speak.sequence must be a list")
 
     text_parts: list[str] = []
+    text_length = 0
+    text_marks: list[tuple[int, int]] = []
     commands: list[SpeechCommand] = []
     segments: list[SpeechSegment] = []
     leading_indexes: list[int] = []
     state = _RenderState()
 
+    def add_text(text: str) -> None:
+        nonlocal text_length
+        text_parts.append(text)
+        text_length += len(text)
+
     def flush_text() -> None:
+        nonlocal text_length
         if text_parts:
-            segments.append(
-                SpeechSegment(
-                    "".join(text_parts),
-                    state.character_mode,
-                    state.language,
-                    state.prosody["pitch"],
-                    state.prosody["rate"],
-                    state.prosody["volume"],
-                    break_before_ms=state.break_ms,
-                )
+            segment = SpeechSegment(
+                "".join(text_parts),
+                state.character_mode,
+                state.language,
+                state.prosody["pitch"],
+                state.prosody["rate"],
+                state.prosody["volume"],
+                break_before_ms=state.break_ms,
             )
+            segments.append(_place_indexes(segment, text_marks))
             text_parts.clear()
+            text_marks.clear()
+            text_length = 0
             state.break_ms = 0
 
     for item in sequence:
         if isinstance(item, str):
-            text_parts.append(item)
+            add_text(item)
             continue
         if not (
             isinstance(item, list)
@@ -192,8 +242,9 @@ def render_sequence(sequence: object) -> RenderedSequence:
                 LOG.warning("ignoring invalid IndexCommand parameters=%s", parameters)
                 continue
             LOG.debug("received IndexCommand parameters=%s", parameters)
-            flush_text()
-            if segments:
+            if text_parts:
+                text_marks.append((text_length, index))
+            elif segments:
                 last = segments[-1]
                 segments[-1] = replace(last, indexes=(*last.indexes, index))
             else:
@@ -234,7 +285,7 @@ def render_sequence(sequence: object) -> RenderedSequence:
         elif command.name == COMMAND_PHONEME:
             text = parameters.get("text")
             if isinstance(text, str):
-                text_parts.append(text)
+                add_text(text)
         else:
             LOG.warning(
                 "ignoring unsupported speech command name=%s parameters=%s",
@@ -244,21 +295,28 @@ def render_sequence(sequence: object) -> RenderedSequence:
 
     flush_text()
     if segments:
-        segments[0] = replace(segments[0], text=segments[0].text.lstrip())
-        segments[-1] = replace(segments[-1], text=segments[-1].text.rstrip())
+        first = segments[0]
+        removed = len(first.text) - len(first.text.lstrip())
+        segments[0] = replace(
+            first,
+            text=first.text[removed:],
+            marks=tuple((offset - removed, index) for offset, index in first.marks),
+        )
+        last = segments[-1]
+        segments[-1] = replace(last, text=last.text.rstrip())
 
     kept: list[SpeechSegment] = []
     pending = list(leading_indexes)
     for segment in segments:
         if segment.text:
             if pending:
-                segment = replace(segment, indexes=(*pending, *segment.indexes))
+                segment = replace(segment, leading_indexes=(*pending, *segment.leading_indexes))
                 pending.clear()
             kept.append(segment)
         elif kept:
-            kept[-1] = replace(kept[-1], indexes=(*kept[-1].indexes, *segment.indexes))
+            kept[-1] = replace(kept[-1], indexes=(*kept[-1].indexes, *segment.all_indexes))
         else:
-            pending.extend(segment.indexes)
+            pending.extend(segment.all_indexes)
 
     return RenderedSequence(
         "".join(segment.text for segment in kept).strip(),
@@ -365,6 +423,17 @@ class ProtocolSession(RdAccessSession):
         LOG.debug("submitting speech text=%r", rendered.text)
         last = len(rendered.segments) - 1
         for position, segment in enumerate(rendered.segments):
+            if segment.character_mode and segment.marks:
+                # Spelled text stays plain text: its inner indexes are reported
+                # once it has been spoken.
+                segment = replace(
+                    segment,
+                    marks=(),
+                    indexes=(*(index for _offset, index in segment.marks), *segment.indexes),
+                )
+            on_begin = None
+            if segment.leading_indexes:
+                on_begin = self._index_reporter(segment.leading_indexes, done=False)
             on_done = None
             if segment.indexes or position == last:
                 on_done = self._index_reporter(segment.indexes, done=position == last)
@@ -377,8 +446,19 @@ class ProtocolSession(RdAccessSession):
                 pitch=segment.pitch,
                 rate=segment.rate,
                 volume=segment.volume,
+                marks=tuple((offset, str(index)) for offset, index in segment.marks),
+                on_begin=on_begin,
+                on_mark=self._mark_reporter if segment.marks else None,
                 on_done=on_done,
             )
+
+    def _mark_reporter(self, name: str) -> None:
+        try:
+            index = int(name)
+        except ValueError:
+            LOG.debug("ignoring Speech Dispatcher mark %r", name)
+            return
+        self._send_reached_indexes((index,), done=False)
 
     def _index_reporter(self, indexes: tuple[int, ...], *, done: bool) -> Callable[[], None]:
         def report() -> None:

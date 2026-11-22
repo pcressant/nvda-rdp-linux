@@ -27,6 +27,9 @@ class FakeOutput:
     def __init__(self) -> None:
         self.spoken: list[tuple[str, bool]] = []
         self.done_callbacks: list[Callable[[], None]] = []
+        self.begin_callbacks: list[Callable[[], None]] = []
+        self.mark_callbacks: list[Callable[[str], None]] = []
+        self.marks: list[tuple[tuple[int, str], ...]] = []
         self.cancel_count = 0
         self.states: list[dict[str, object]] = []
         self.breaks: list[int] = []
@@ -38,11 +41,19 @@ class FakeOutput:
         text: str,
         *,
         character_mode: bool = False,
+        marks: tuple[tuple[int, str], ...] = (),
+        on_begin: Callable[[], None] | None = None,
+        on_mark: Callable[[str], None] | None = None,
         on_done: Callable[[], None] | None = None,
         **state: object,
     ) -> None:
         self.spoken.append((text, character_mode))
         self.states.append(state)
+        self.marks.append(marks)
+        if on_begin is not None:
+            self.begin_callbacks.append(on_begin)
+        if on_mark is not None:
+            self.mark_callbacks.append(on_mark)
         if on_done is not None:
             self.done_callbacks.append(on_done)
 
@@ -312,7 +323,9 @@ def test_prosody_apply_mirrors_nvda_new_value() -> None:
     assert Prosody().apply(42) == 42
 
 
-def test_indexes_split_segments_and_are_reported_in_order() -> None:
+def test_indexes_do_not_split_text_and_are_reported_in_order() -> None:
+    # Orca marks every word: one Speech Dispatcher message per word would put
+    # a pause between words.
     session, output, sent = connected_session()
     session.feed(
         speak_line(
@@ -323,12 +336,86 @@ def test_indexes_split_segments_and_are_reported_in_order() -> None:
             ["IndexCommand", {"index": 3}],
         )
     )
-    assert output.spoken == [("one ", False), ("two", False)]
-    assert len(output.done_callbacks) == 2
-    output.done_callbacks[0]()
+    assert output.spoken == [("one two", False)]
+    assert output.marks == [((4, "2"),)]
+    output.begin_callbacks[0]()
+    assert [json.loads(p)["index"] for p in sent] == [1]
+    output.mark_callbacks[0]("2")
     assert [json.loads(p)["index"] for p in sent] == [1, 2]
-    output.done_callbacks[1]()
+    output.done_callbacks[0]()
     assert [json.loads(p)["index"] for p in sent] == [1, 2, 3, 0]
+
+
+def test_orca_word_marks_stay_in_one_message() -> None:
+    # What the server sends for Orca's "<mark/>word <mark/>word" SSML.
+    rendered = render_sequence(
+        [
+            ["IndexCommand", {"index": 10}],
+            ["IndexCommand", {"index": 11}],
+            "Bonjour ",
+            ["IndexCommand", {"index": 12}],
+            "le ",
+            ["IndexCommand", {"index": 13}],
+            "monde",
+            ["IndexCommand", {"index": 14}],
+        ]
+    )
+    (segment,) = rendered.segments
+    assert segment.text == "Bonjour le monde"
+    assert segment.leading_indexes == (10, 11)
+    assert segment.marks == ((8, 12), (11, 13))
+    assert segment.indexes == (14,)
+
+
+def test_marks_next_to_whitespace_are_leading_or_trailing() -> None:
+    rendered = render_sequence(
+        ["  ", ["IndexCommand", {"index": 1}], "mot  ", ["IndexCommand", {"index": 2}], " "]
+    )
+    (segment,) = rendered.segments
+    assert (segment.text, segment.leading_indexes, segment.marks, segment.indexes) == (
+        "mot",
+        (1,),
+        (),
+        (2,),
+    )
+
+
+def test_marks_shift_with_stripped_leading_whitespace() -> None:
+    rendered = render_sequence(["  un ", ["IndexCommand", {"index": 1}], "deux"])
+    assert rendered.segments[0].marks == ((3, 1),)
+    assert rendered.segments[0].text[3:] == "deux"
+
+
+def test_character_mode_reports_inner_indexes_at_the_end() -> None:
+    session, output, sent = connected_session()
+    session.feed(
+        speak_line(
+            ["CharacterModeCommand", {"state": True}],
+            "a",
+            ["IndexCommand", {"index": 1}],
+            "b",
+        )
+    )
+    assert output.spoken == [("ab", True)]
+    assert output.marks == [()]
+    output.done_callbacks[0]()
+    assert [json.loads(p)["index"] for p in sent] == [1, 0]
+
+
+def test_state_change_still_splits_and_keeps_index_order() -> None:
+    rendered = render_sequence(
+        [
+            "a ",
+            ["IndexCommand", {"index": 1}],
+            "b",
+            ["PitchCommand", {"_offset": 10, "_multiplier": 1, "isDefault": False}],
+            ["IndexCommand", {"index": 2}],
+            "c",
+        ]
+    )
+    first, second = rendered.segments
+    assert (first.text, first.marks, first.indexes) == ("a b", ((2, 1),), (2,))
+    assert (second.text, second.all_indexes) == ("c", ())
 
 
 def test_sequence_without_text_reports_indexes_immediately() -> None:

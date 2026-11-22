@@ -126,7 +126,9 @@ ensemble. L'ancien paquet unique `nvda-rdp-linux-git` est remplacé par
 `nvda-rdp-freerdp-plugin-git` et `nvda-rdp-client-git`.
 
 Sous Arch, le module Python de BrlAPI est dans `python-brltty` et `pw-play`
-dans `pipewire-audio`.
+dans `pipewire-audio`. Le `/etc/krb5.conf` d'exemple d'Arch fait expirer les
+connexions NLA : voir « Arch Linux : expiration de la connexion avec NLA »
+dans [run.fr.md](../run.fr.md).
 
 ## Debian : fichiers .deb
 

@@ -113,7 +113,9 @@ that fallback and `pkgver=` together. The old single package
 `nvda-rdp-client-git`.
 
 On Arch, the Python BrlAPI module is in `python-brltty` and `pw-play` in
-`pipewire-audio`.
+`pipewire-audio`. Arch's example `/etc/krb5.conf` makes NLA connections time
+out; see "Arch Linux: connection timeout with NLA" in
+[run.md](../run.md).
 
 ## Debian: .deb files
 

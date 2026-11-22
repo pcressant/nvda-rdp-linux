@@ -290,6 +290,20 @@ systemctl --user enable --now nvda-rdp-client.service
 How the packages are built, tested in VMs and released, and how to install
 on other distributions: [docs/packaging.md](docs/packaging.md).
 
+### Arch Linux: connection timeout with NLA
+
+Arch's `krb5` package installs an example `/etc/krb5.conf` whose default
+realm is `ATHENA.MIT.EDU`. FreeRDP tries Kerberos first for NLA, waits for
+that realm's KDC on the Internet, and the Windows host gives up first: the
+connection fails after about a minute with `Cannot contact any KDC for realm
+'ATHENA.MIT.EDU'`, then `NLA begin failed`, in the client's log (Remmina's
+log is in the user journal). This does not depend on this project. Either:
+
+* comment out `default_realm` in `/etc/krb5.conf` (or set your real realm)
+  when the computer does not use Kerberos;
+* or, for one connection, skip Kerberos: `/auth-pkg-list:!kerberos` for
+  `xfreerdp3`, or start Remmina with `KRB5_CONFIG=/dev/null remmina`.
+
 ## Using Remmina
 
 Remmina is used unmodified. FreeRDP only loads channel plugins from its own
@@ -304,8 +318,8 @@ or install it with `nix profile install .#remmina-with-nvda-rdp`. On Arch and
 Debian, the plugin package installs `libnvda-rdp-dvc-client.so` into the
 plugin directory of the system FreeRDP (`/usr/lib/freerdp3/`,
 `/usr/lib/x86_64-linux-gnu/freerdp3/`), which the distribution's Remmina uses
-as well. The VM tests check this with `xfreerdp3`; the distributions' Remmina
-has not been tested yet.
+as well. The VM tests check this with `xfreerdp3`; Arch Linux's Remmina was
+also used in a real session.
 
 In the RDP connection profile, Advanced tab, set "Dynamic virtual channel" to:
 

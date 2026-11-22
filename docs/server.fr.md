@@ -33,11 +33,11 @@ Dans ce dépôt, avec les paquets construits ici, les tests système vérifient
 de Linux à Linux, dans des VM NixOS, Arch Linux et Debian forky : l'écran de
 connexion local garde sa parole, l'écran de connexion à distance est servi,
 les deux canaux négocient la version 2 de RDAccess, et la parole d'Orca
-parvient au Speech Dispatcher du client. Sous NixOS, un essai manuel depuis
-Windows, avec NVDA, RDAccess et `mstsc`, a réussi avec le module
-`services.nvda-rdp-server`, sur la VM de l'étude. Les paquets Arch et Debian
-n'ont pas encore été essayés depuis Windows ; le braille de bout en bout et
-les cas d'échec ne sont pas couverts par les tests automatiques.
+parvient au Speech Dispatcher du client. Des essais manuels depuis Windows,
+avec NVDA, RDAccess et `mstsc`, braille compris, ont réussi avec ces paquets
+sous NixOS (le module `services.nvda-rdp-server`, sur la VM de l'étude), Arch
+Linux et Debian forky. Le braille de bout en bout et les cas d'échec ne sont
+pas couverts par les tests automatiques.
 
 ## Prérequis
 

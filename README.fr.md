@@ -51,7 +51,9 @@ La langue de la voix et des messages suit la locale (`LC_ALL`,
 
 Expérimental. De vraies sessions RDP avec RDAccess 2.0.4 (NVDA 2026.2) ont
 confirmé la parole, l'affichage braille, les touches de la plage et le
-routage, les sons de NVDA, Remmina et le service client unique. La gestion
+routage, les sons de NVDA, Remmina et le service client unique ; le client
+empaqueté a aussi été vérifié en vraie session sous Arch Linux et Debian
+forky. La gestion
 des paramètres du pilote, la synchronisation du verrouillage des majuscules,
 la saisie au clavier braille et `pause_speech` sont implémentées et couvertes
 par des tests unitaires, mais pas encore confirmées en vraie session.
@@ -91,10 +93,9 @@ touches de la plage, la saisie braille, la reconnexion et l'écran de
 connexion à distance. Dans ce dépôt, les tests système dans des VM NixOS,
 Arch Linux et Debian forky vérifient, de Linux à Linux, que la parole d'Orca
 sur l'écran de connexion à distance parvient au client et que l'écran de
-connexion local n'est pas modifié. Sous NixOS, un essai manuel depuis
-Windows, avec NVDA, RDAccess et `mstsc`, a réussi avec le module
-`services.nvda-rdp-server` de ce dépôt. Les paquets Arch et Debian n'ont pas
-encore été essayés depuis Windows, ni le braille de bout en bout avec eux.
+connexion local n'est pas modifié. Des essais manuels depuis Windows, avec
+NVDA, RDAccess et `mstsc`, braille compris, ont réussi avec les paquets de ce
+dépôt sous NixOS (`services.nvda-rdp-server`), Arch Linux et Debian forky.
 
 Voir [docs/server.fr.md](docs/server.fr.md) et `man nvda-rdp-server`.
 

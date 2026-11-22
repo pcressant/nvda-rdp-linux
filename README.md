@@ -47,7 +47,8 @@ The voice and message language follows the locale (`LC_ALL`, `LC_MESSAGES`,
 
 Experimental. Real RDP sessions against RDAccess 2.0.4 (NVDA 2026.2) have
 confirmed speech, braille output, braille display keys and routing, NVDA
-sounds, Remmina, and the single client service. Driver settings management,
+sounds, Remmina, and the single client service; the packaged client was also
+checked in real sessions on Arch Linux and Debian forky. Driver settings management,
 Caps Lock synchronization, braille keyboard input and `pause_speech` are
 implemented and unit-tested, but not yet confirmed in a real session.
 RDAccess 1.x is not supported.
@@ -84,10 +85,9 @@ changes, braille output, display keys, braille typing, reconnection and the
 remote login screen were verified on NixOS. In this repository, the system
 tests in VMs of NixOS, Arch Linux and Debian forky check, from Linux to Linux,
 that Orca's speech on the remote login screen reaches the client and that the
-local login screen is unchanged. On NixOS, a manual test from Windows with
-NVDA, RDAccess and `mstsc` passed with this repository's
-`services.nvda-rdp-server` module. The Arch and Debian packages have not been
-tested from Windows yet, nor braille end to end with them.
+local login screen is unchanged. Manual tests from Windows with NVDA,
+RDAccess and `mstsc`, braille included, passed with this repository's
+packages on NixOS (`services.nvda-rdp-server`), Arch Linux and Debian forky.
 
 See [docs/server.md](docs/server.md) and `man nvda-rdp-server`.
 

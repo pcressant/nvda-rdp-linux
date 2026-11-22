@@ -28,10 +28,11 @@ In this repository, with the packages built here, the system tests check from
 Linux to Linux, in VMs of NixOS, Arch Linux and Debian forky: the local login
 screen keeps its speech, the remote login screen is served, both channels
 negotiate RDAccess version 2, and Orca's speech reaches the client's Speech
-Dispatcher. On NixOS, a manual test from Windows with NVDA, RDAccess and
-`mstsc` passed with the `services.nvda-rdp-server` module, on the study's VM.
-The Arch and Debian packages have not been tested from Windows yet; braille
-end to end and failure cases are not covered by the automated tests.
+Dispatcher. Manual tests from Windows with NVDA, RDAccess and `mstsc`,
+braille included, passed with these packages on NixOS (the
+`services.nvda-rdp-server` module, on the study's VM), Arch Linux and Debian
+forky. Braille end to end and failure cases are not covered by the automated
+tests.
 
 ## Requirements
 

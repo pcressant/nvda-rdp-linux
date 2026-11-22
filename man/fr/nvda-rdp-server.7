@@ -1,0 +1,213 @@
+.\" SPDX-License-Identifier: GPL-2.0-or-later
+.\" Traduction de man/nvda-rdp-server.7, qui fait référence.
+.TH NVDA-RDP-SERVER 7 2026-11-22 "nvda-rdp-linux 0.2.0" "Divers"
+.SH NOM
+nvda-rdp-server \- parole et braille d'Orca par le NVDA d'un client RDP
+.SH DESCRIPTION
+Avec
+.BR nvda-rdp-server ,
+un utilisateur aveugle sous Windows, avec NVDA et son extension RDAccess, qui
+se connecte en RDP à l'ouverture de session à distance de GNOME Remote
+Desktop, entend Orca par le synthétiseur de NVDA et lit le braille d'Orca sur
+la plage de NVDA. Les touches de la plage et la saisie braille reviennent à
+Orca. Rien ne change côté Windows, ni pour les sessions locales de
+l'ordinateur Linux : leur Orca garde le Speech Dispatcher et le BRLTTY
+habituels.
+.PP
+Il faut GNOME 49 ou plus récent : les écrans de connexion GDM des connexions à
+distance y tournent sous leurs propres utilisateurs, et Orca tourne comme
+service utilisateur systemd
+.BR orca.service .
+.SS Fonctionnement
+.TP
+.B libnvda-rdp-grd-preload.so
+Une bibliothèque chargée par
+.B LD_PRELOAD
+dans le démon de session de GNOME Remote Desktop
+.RB ( gnome-remote-desktop-handover.service ).
+Dans chaque connexion RDP, elle ouvre les canaux virtuels dynamiques
+.B NVDA-SPEECH
+et
+.B NVDA-BRAILLE
+et les présente comme les sockets Unix
+.I $XDG_RUNTIME_DIR/gnome-remote-desktop/nvda-speech.sock
+et
+.IR nvda-braille.sock .
+GNOME Remote Desktop lui-même n'est pas modifié.
+.TP
+.B nvda-rdp-server-session.service
+Au début de chaque session graphique, écran de connexion de GDM compris,
+décide d'après les propriétés
+.B Remote
+et
+.B Class
+de logind si la session est à distance. Pour une session à distance, il écrit
+l'environnement dont Orca a besoin ; sinon il ne change rien.
+.TP
+.B nvda-rdp-speechd.service
+Dans les sessions à distance, une instance de Speech Dispatcher propre à la
+session, dont le module de sortie envoie la parole d'Orca à NVDA, avec les
+index, l'interruption, et les changements de voix d'Orca sous forme de
+commandes relatives de débit, de hauteur et de volume de NVDA. Tant que NVDA
+n'est pas rattaché, les messages vont au Speech Dispatcher habituel de la
+session, entendu par l'audio RDP.
+.TP
+.B nvda-rdp-brlapi.service
+Dans les sessions à distance, un serveur BrlAPI propre à la session, qui
+présente à Orca la plage braille de NVDA, à sa taille. Il transcrit le texte
+d'Orca en points avec liblouis et la table d'Orca, et traduit les touches de
+la plage en commandes d'Orca.
+.TP
+.B orca.service
+Un fichier complémentaire (drop-in) donne à Orca l'environnement écrit pour
+les sessions à distance
+.RB ( SPEECHD_ADDRESS ,
+.BR BRLAPI_HOST ,
+.BR BRLAPI_AUTH )
+et le démarre après les deux serveurs.
+.PP
+Ce sont toutes des unités utilisateur de chaque utilisateur, utilisateurs des
+écrans de connexion de GDM compris. Il n'y a pas à les activer : le drop-in de
+.B orca.service
+les entraîne, et les deux serveurs ne démarrent que dans les sessions à
+distance.
+.SH CONFIGURATION
+L'ouverture de session à distance de GDM doit être activée dans le démon
+système de GNOME Remote Desktop, dans les Paramètres de GNOME (Système, Bureau
+à distance, Connexion à distance), ou en root :
+.PP
+.RS
+.nf
+grdctl \-\-system rdp set\-tls\-key /var/lib/gnome\-remote\-desktop/tls/tls.key
+grdctl \-\-system rdp set\-tls\-cert /var/lib/gnome\-remote\-desktop/tls/tls.crt
+grdctl \-\-system rdp set\-credentials UTILISATEUR
+grdctl \-\-system rdp enable
+.fi
+.RE
+.PP
+.B set-credentials
+demande le mot de passe. Ce sont les identifiants de la connexion RDP à
+l'écran de connexion, pas ceux d'un compte utilisateur.
+.PP
+Pour qu'Orca parle sur l'écran de connexion, le lecteur d'écran doit y être
+activé : depuis le menu d'accessibilité de l'écran de connexion, ou dans les
+réglages dconf de GDM, clé
+.B screen-reader-enabled
+de
+.BR org.gnome.desktop.a11y.applications .
+.TP
+.B NVDA_RDP_LOGIN_SCREEN
+Mettre
+.B no
+dans
+.B nvda-rdp-server-session.service
+pour laisser à l'écran de connexion des connexions à distance sa sortie
+habituelle ; seules les sessions des utilisateurs sont alors servies. Pour
+tous les utilisateurs, avec un drop-in comme
+.IR /etc/systemd/user/nvda-rdp-server-session.service.d/login-screen.conf :
+.PP
+.RS
+.nf
+[Service]
+Environment=NVDA_RDP_LOGIN_SCREEN=no
+.fi
+.RE
+.PP
+Sous NixOS, l'option de module
+.B services.nvda-rdp-server.loginScreen
+fait cela.
+.TP
+.B NVDA_RDP_PROSODY
+Mettre
+.B 0
+dans
+.B nvda-rdp-speechd.service
+pour ne plus envoyer à NVDA les changements de voix d'Orca.
+.TP
+.B NVDA_RDP_LOG_LEVEL
+Niveau du journal du module de parole, réglé dans
+.BR nvda-rdp-speechd.service :
+.B DEBUG
+inclut le texte dit. Par défaut :
+.BR INFO .
+.TP
+.B WLOG_FILTER
+Mettre
+.B nvda-rdp.grd-preload:DEBUG
+dans
+.B gnome-remote-desktop-handover.service
+pour voir dans le journal les lignes de la bibliothèque des canaux ; par
+défaut, GNOME Remote Desktop ne journalise que les avertissements.
+.SH FICHIERS
+.TP
+.I $XDG_RUNTIME_DIR/nvda-rdp-server/
+État de la session :
+.I remote
+quand elle est servie, et
+.IR orca.env .
+.TP
+.I $XDG_RUNTIME_DIR/nvda-rdp-brlapi.key
+Clé du serveur BrlAPI de la session, réécrite à chaque démarrage, mode 0600.
+.TP
+.I $XDG_RUNTIME_DIR/nvda-rdp-speechd-module.log
+Journal du module de parole.
+.TP
+.I /usr/share/nvda-rdp-linux/speechd/speechd.conf
+Configuration du Speech Dispatcher de la session.
+.SH DIAGNOSTICS
+Les programmes journalisent dans le journal système sous leur propre nom :
+.PP
+.RS
+.nf
+journalctl \-b \-t nvda\-rdp\-server\-session \-t nvda\-rdp\-brlapi\-server \e
+  \-t gnome\-remote\-desktop\-daemon
+.fi
+.RE
+.PP
+.B nvda-rdp-server-session
+écrit une ligne par session, par exemple
+.B "remote session: Orca uses the nvda-rdp BrlAPI server and Speech Dispatcher"
+ou
+.BR "local session: Orca keeps its usual braille and speech" .
+Une fois NVDA rattaché,
+.B "NVDA-BRAILLE: protocol version 2 negotiated"
+est dans le journal et
+.B "NVDA-SPEECH: protocol version 2 negotiated"
+dans le journal du module de parole.
+.SH SÉCURITÉ
+Les sockets des canaux sont dans un répertoire en mode 0700, en mode 0600.
+Le serveur BrlAPI n'écoute que sur 127.0.0.1, port 4101 plus l'UID de
+l'utilisateur, et n'accepte que les clients qui connaissent la clé de la
+session.
+La parole et le braille sont ce que présente Orca et sont présumés
+confidentiels : les journaux ne les contiennent qu'au niveau
+.BR DEBUG .
+Tout programme de la session à distance peut écrire dans les canaux de NVDA,
+comme sous Windows avec RDAccess.
+.SH LIMITES
+La bibliothèque des canaux dépend de détails internes de GNOME Remote Desktop
+(un
+.B WTSOpenServerA
+et un
+.B WTSCloseServer
+par connexion) ; une nouvelle version peut la casser. Elle sert seulement
+l'ouverture de session à distance de GDM, pas le partage d'une session locale
+ni les sessions sans écran.
+.PP
+Un compte a un seul
+.BR orca.service " :"
+s'il a une session locale et une session à distance en même temps, la
+première ouverte décide. Une nouvelle connexion à distance au même compte
+rejoint sa session existante.
+.PP
+Seules les différences avec la voix par défaut d'Orca parviennent à NVDA ; le
+choix de synthétiseur et de voix d'Orca n'y a pas d'effet. Un changement de
+taille de la plage coûte une reconnexion d'environ 2 secondes.
+.SH VOIR AUSSI
+.BR nvda\-rdp\-client (1),
+.BR grdctl (1),
+.BR orca (1),
+.BR speech\-dispatcher (1),
+.BR systemd.unit (5)
+.PP
+https://github.com/pcressant/nvda\-rdp\-linux

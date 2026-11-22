@@ -1,39 +1,41 @@
 # Maintainer: Patrick Cressant <patrick.cressant@gmail.com>
-pkgname=nvda-rdp-linux-git
+#
+# One source, four packages:
+# - nvda-rdp-common-git: the Python code shared by the client and the server;
+# - nvda-rdp-freerdp-plugin-git: the FreeRDP plugin of the client;
+# - nvda-rdp-client-git: nvda-rdp-client, for a Linux RDP client of NVDA;
+# - nvda-rdp-server-git: Orca on GNOME Remote Desktop, for an NVDA RDP client.
+pkgbase=nvda-rdp-linux-git
+pkgname=(
+  'nvda-rdp-common-git'
+  'nvda-rdp-freerdp-plugin-git'
+  'nvda-rdp-client-git'
+  'nvda-rdp-server-git'
+)
 _pkgname=nvda-rdp-linux
 pkgver=0.2.0
 pkgrel=1
-pkgdesc="Linux client for NVDA's RDAccess: remote NVDA speech and braille over RDP"
+pkgdesc="NVDA's RDAccess on Linux: remote speech and braille over RDP"
 arch=('x86_64' 'aarch64')
 url="https://github.com/pcressant/nvda-rdp-linux"
 license=('GPL-2.0-or-later')
-depends=(
-  'at-spi2-core'
-  'brltty'
-  'freerdp'
-  'pipewire-audio' # pw-play
-  'python'
-  'python-atspi'
-  'python-brltty' # brlapi module
-  'python-gobject'
-  'speech-dispatcher' # also provides the speechd module
-)
 makedepends=(
   'cmake'
+  'freerdp' # FreeRDP 3 and WinPR 3 headers
   'git'
   'ninja'
-  'python-build'
-  'python-installer'
-  'python-setuptools'
+  'python'
 )
-checkdepends=('python-pytest')
-optdepends=(
-  'remmina: graphical RDP client (set "Dynamic virtual channel" to nvda-rdp-dvc)'
-  'xdotool: --sync-caps-lock'
-  'xorg-xset: --sync-caps-lock'
+checkdepends=(
+  'brltty'
+  'dbus'
+  'liblouis'
+  'python-atspi'
+  'python-brltty'
+  'python-gobject'
+  'python-pytest'
+  'speech-dispatcher'
 )
-provides=("$_pkgname")
-conflicts=("$_pkgname")
 source=("$_pkgname::git+$url.git")
 sha256sums=('SKIP')
 
@@ -48,23 +50,140 @@ pkgver() {
 
 build() {
   cd "$_pkgname"
-  cmake -S freerdp-plugin -B build -G Ninja \
-    -DCMAKE_BUILD_TYPE=None \
-    -DCMAKE_INSTALL_PREFIX=/usr
-  cmake --build build
-  python -m build --wheel --no-isolation
+  local part
+  for part in freerdp-plugin grd-preload; do
+    cmake -S "$part" -B "build-$part" -G Ninja \
+      -DCMAKE_BUILD_TYPE=None \
+      -DCMAKE_INSTALL_PREFIX=/usr \
+      -DCMAKE_INSTALL_LIBDIR=lib
+    cmake --build "build-$part"
+  done
 }
 
 check() {
   cd "$_pkgname"
-  python -m pytest -q -p no:cacheprovider
+  PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider
 }
 
-package() {
+# Install the Python files of the given parts of nvda_rdp_linux, compiled.
+_install_python() {
+  local site part file
+  site=$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
+  for part in "$@"; do
+    while IFS= read -r file; do
+      install -Dm644 "$file" "$pkgdir$site/$file"
+    done < <(find "nvda_rdp_linux/$part" -name '*.py' | sort)
+  done
+  python -m compileall -q -o 0 -o 1 -s "$pkgdir" -p / "$pkgdir$site/nvda_rdp_linux"
+}
+
+# A man page of man/ and its French translation of man/fr/.
+_install_man() {
+  local section=${1##*.}
+  install -Dm644 "man/$1" "$pkgdir/usr/share/man/man$section/$1"
+  install -Dm644 "man/fr/$1" "$pkgdir/usr/share/man/fr/man$section/$1"
+}
+
+package_nvda-rdp-common-git() {
+  pkgdesc="NVDA's RDAccess on Linux: code shared by the client and the server"
+  arch=('any')
+  depends=('python')
+  provides=('nvda-rdp-common')
+  conflicts=('nvda-rdp-common')
+
   cd "$_pkgname"
-  DESTDIR="$pkgdir" cmake --install build
-  python -m installer --destdir="$pkgdir" dist/*.whl
+  # The package's own __init__.py, and common/.
+  local site
+  site=$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
+  install -Dm644 nvda_rdp_linux/__init__.py "$pkgdir$site/nvda_rdp_linux/__init__.py"
+  _install_python common
+  install -Dm644 README.md README.fr.md -t "$pkgdir/usr/share/doc/$_pkgname"
+}
+
+package_nvda-rdp-freerdp-plugin-git() {
+  pkgdesc="NVDA's RDAccess on Linux: FreeRDP plugin of the RDAccess channels"
+  depends=('freerdp')
+  provides=('nvda-rdp-freerdp-plugin')
+  # The single package that came before this split.
+  conflicts=('nvda-rdp-freerdp-plugin' 'nvda-rdp-linux' 'nvda-rdp-linux-git')
+  replaces=('nvda-rdp-linux-git')
+
+  cd "$_pkgname"
+  DESTDIR="$pkgdir" cmake --install build-freerdp-plugin
+}
+
+package_nvda-rdp-client-git() {
+  pkgdesc="NVDA's RDAccess on Linux: client for a remote NVDA's speech and braille"
+  arch=('any')
+  depends=(
+    "nvda-rdp-common-git=$pkgver-$pkgrel"
+    'nvda-rdp-freerdp-plugin-git'
+    'at-spi2-core'
+    'brltty'
+    'pipewire-audio' # pw-play
+    'python'
+    'python-atspi'
+    'python-brltty' # brlapi module
+    'python-gobject'
+    'speech-dispatcher' # also provides the speechd module
+  )
+  optdepends=(
+    'remmina: graphical RDP client (set "Dynamic virtual channel" to nvda-rdp-dvc)'
+    'xdotool: --sync-caps-lock'
+    'xorg-xset: --sync-caps-lock'
+  )
+  provides=('nvda-rdp-client')
+  conflicts=('nvda-rdp-client' 'nvda-rdp-linux' 'nvda-rdp-linux-git')
+  replaces=('nvda-rdp-linux-git')
+
+  cd "$_pkgname"
+  local site
+  site=$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
+  install -Dm644 nvda_rdp_linux/__main__.py nvda_rdp_linux/app.py \
+    -t "$pkgdir$site/nvda_rdp_linux"
+  _install_python client
+  install -d "$pkgdir/usr/bin"
+  sed 's|@PYTHON@|/usr/bin/python3|' packaging/client/nvda-rdp-client.in \
+    >"$pkgdir/usr/bin/nvda-rdp-client"
+  chmod 755 "$pkgdir/usr/bin/nvda-rdp-client"
   install -Dm644 packaging/systemd/nvda-rdp-client.service \
     "$pkgdir/usr/lib/systemd/user/nvda-rdp-client.service"
-  install -Dm644 README.md run.md -t "$pkgdir/usr/share/doc/$_pkgname"
+  _install_man nvda-rdp-client.1
+  install -Dm644 run.md run.fr.md -t "$pkgdir/usr/share/doc/$_pkgname"
+}
+
+package_nvda-rdp-server-git() {
+  pkgdesc="NVDA's RDAccess on Linux: Orca's speech and braille for NVDA over GNOME Remote Desktop"
+  depends=(
+    "nvda-rdp-common-git=$pkgver-$pkgrel"
+    'gdm' # remote login screen
+    'glib2'
+    'gnome-remote-desktop'
+    'liblouis' # also provides the louis module
+    'orca'
+    'python'
+    'python-gobject'
+    'speech-dispatcher' # also provides the speechd module
+    'systemd' # loginctl
+  )
+  provides=('nvda-rdp-server')
+  conflicts=('nvda-rdp-server')
+
+  cd "$_pkgname"
+  _install_python server
+  DESTDIR="$pkgdir" cmake --install build-grd-preload
+  (
+    cd packaging/server
+    DESTDIR="$pkgdir" \
+      LIBEXECDIR=/usr/lib/nvda-rdp-linux \
+      PKGLIBDIR=/usr/lib/nvda-rdp-linux \
+      PKGDATADIR=/usr/share/nvda-rdp-linux \
+      USERUNITDIR=/usr/lib/systemd/user \
+      PYTHON=/usr/bin/python3 \
+      SPEECH_DISPATCHER=/usr/bin/speech-dispatcher \
+      SESSION_PATH=/usr/bin \
+      sh install.sh
+  )
+  _install_man nvda-rdp-server.7
+  install -Dm644 docs/server.md docs/server.fr.md -t "$pkgdir/usr/share/doc/$_pkgname"
 }

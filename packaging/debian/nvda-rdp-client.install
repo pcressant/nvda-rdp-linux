@@ -1,0 +1,5 @@
+nvda_rdp_linux/__main__.py usr/lib/python3/dist-packages/nvda_rdp_linux/
+nvda_rdp_linux/app.py usr/lib/python3/dist-packages/nvda_rdp_linux/
+nvda_rdp_linux/client/*.py usr/lib/python3/dist-packages/nvda_rdp_linux/client/
+packaging/systemd/nvda-rdp-client.service usr/lib/systemd/user/
+man/fr/nvda-rdp-client.1 usr/share/man/fr/man1/

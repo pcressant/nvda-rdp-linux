@@ -18,21 +18,22 @@ import threading
 from collections.abc import Callable
 from pathlib import Path
 
-from .rdaccess.audio import DEFAULT_PLAYER, AudioOutput, default_waves_dir
-from .rdaccess.braille import BrailleGesture, BrailleProtocolSession
-from .rdaccess.brltty import (
+from .client.audio import DEFAULT_PLAYER, AudioOutput, default_waves_dir
+from .client.braille import BrailleProtocolSession
+from .client.brltty import (
     BRLTTY_GESTURE_MAP,
     DEFAULT_FOCUS_APPLICATIONS,
     AtSpiFocusTracker,
     ReconnectingBrailleDisplay,
 )
-from .rdaccess.capslock import CapsLockSync, default_backend
-from .rdaccess.ipc import UnixFrameServer, default_socket_path, receive_frames, send_frame
-from .rdaccess.language import system_language
-from .rdaccess.notify import MODES, ConnectionNotifier
-from .rdaccess.protocol import ProtocolSession
-from .rdaccess.session import RdAccessSession
-from .rdaccess.speech import SpeechDispatcherOutput
+from .client.capslock import CapsLockSync, default_backend
+from .client.ipc import UnixFrameServer, default_socket_path, receive_frames, send_frame
+from .client.language import system_language
+from .client.notify import MODES, ConnectionNotifier
+from .client.protocol import ProtocolSession
+from .client.session import RdAccessSession
+from .client.speech import SpeechDispatcherOutput
+from .common.braille import BrailleGesture
 
 LOG = logging.getLogger(__name__)
 

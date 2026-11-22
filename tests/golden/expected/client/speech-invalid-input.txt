@@ -1,0 +1,49 @@
+# speech-invalid-input.json: Invalid and unsupported input never stops the channel.
+startup:
+  trace {"src": "ssip", "call": "connect", "args": [["nvda-rdp-linux"], {"autospawn": true, "component": "rdaccess"}]}
+  trace {"src": "ssip", "call": "set_output_module", "args": ["espeak-ng"]}
+  trace {"src": "ssip", "call": "set_language", "args": ["fr-FR"]}
+  trace {"src": "ssip", "call": "set_rate", "args": [50]}
+step 1: {"connect": "speech"}
+  speech <- {"hex": "11"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["Parole distante connectée", false, null]}
+step 2: {"send": "speech", "fixture": "server-protocol-version-v1.hex"}
+  speech <- {"hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  speech <- {"text": "{\"attribute\": \"rdAccessVersion\", \"type\": \"attribute_request\"}\n"}
+  speech <- {"text": "{\"attribute\": \"nvdaVersion\", \"type\": \"attribute_request\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 3: {"send": "speech", "fixture": "server-protocol-version-v2-jsonl.hex"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 4: {"send": "speech", "text": "{pas du json}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 5: {"send": "speech", "text": "[1, 2]\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 6: {"send": "speech", "text": "{\"type\": \"ping\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 7: {"send": "speech", "hex": "ff fe 00 01"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 8: {"send": "speech", "hex": "53 4b 02 00 80 04"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 9: {"send": "speech", "hex": "53 40 03 00 61 62 63"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 10: {"send": "speech", "hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 01"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 11: {"send": "speech", "json": [{"type": "protocol_version", "version": 2, "channel": "NVDA-BRAILLE"}, {"type": "attribute_value", "value": 1}, {"type": "attribute_request", "attribute": 5}, {"type": "unknown_message"}, {}]}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 12: {"send": "speech", "json": [{"type": "attribute_request", "attribute": "timeSinceInput"}, {"type": "attribute_value", "attribute": "timeSinceInput", "value": 12}, {"type": "attribute_value", "attribute": "protocolVersion", "value": 2}, {"type": "attribute_value", "attribute": "capsLockToggle", "value": "on"}, {"type": "attribute_value", "attribute": "somethingElse", "value": 1}]}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 13: {"send": "speech", "json": [{"type": "speak", "sequence": ["toujours là", ["IndexCommand", {"index": 1}]]}]}
+  speech <- {"text": "{\"index\": 1, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"index\": 0, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+  trace {"src": "ssip", "call": "set_pitch", "args": [20]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["toujours là", true, ["end"]]}
+shutdown:
+  trace {"src": "ssip", "call": "set_pitch", "args": [0]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["Parole distante déconnectée", false, null]}
+  trace {"src": "ssip", "call": "close", "args": []}
+returncode: 0

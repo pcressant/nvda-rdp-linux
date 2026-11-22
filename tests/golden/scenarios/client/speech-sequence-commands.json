@@ -1,0 +1,326 @@
+{
+  "description": "Synthetic speak sequences covering every speech command, invalid items and edge cases of index placement.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR"
+  ],
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            [
+              "IndexCommand",
+              {
+                "index": 1
+              }
+            ],
+            "Bonjour ",
+            [
+              "LangChangeCommand",
+              {
+                "lang": "en_US"
+              }
+            ],
+            "hello ",
+            [
+              "IndexCommand",
+              {
+                "index": 2
+              }
+            ],
+            [
+              "LangChangeCommand",
+              {
+                "lang": null
+              }
+            ],
+            "retour",
+            [
+              "IndexCommand",
+              {
+                "index": 3
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            [
+              "RateCommand",
+              {
+                "_offset": 20,
+                "_multiplier": 1,
+                "isDefault": false
+              }
+            ],
+            "vite ",
+            [
+              "RateCommand",
+              {
+                "_offset": 0,
+                "_multiplier": 1,
+                "isDefault": true
+              }
+            ],
+            [
+              "PitchCommand",
+              {
+                "_offset": 0,
+                "_multiplier": 1.5,
+                "isDefault": false
+              }
+            ],
+            "aigu ",
+            [
+              "PitchCommand",
+              {
+                "_offset": 0,
+                "_multiplier": 1,
+                "isDefault": true
+              }
+            ],
+            [
+              "VolumeCommand",
+              {
+                "_offset": 0,
+                "_multiplier": 0.5,
+                "isDefault": false
+              }
+            ],
+            "doux",
+            [
+              "VolumeCommand",
+              {
+                "_offset": 0,
+                "_multiplier": 1,
+                "isDefault": true
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            [
+              "CharacterModeCommand",
+              {
+                "state": true
+              }
+            ],
+            "a",
+            [
+              "CharacterModeCommand",
+              {
+                "state": false
+              }
+            ],
+            " mot",
+            [
+              "IndexCommand",
+              {
+                "index": 4
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            "avant",
+            [
+              "BreakCommand",
+              {
+                "time": 300
+              }
+            ],
+            "après",
+            [
+              "BreakCommand",
+              {
+                "time": 20000
+              }
+            ],
+            "fin",
+            [
+              "EndUtteranceCommand",
+              {}
+            ],
+            "suite"
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            [
+              "PhonemeCommand",
+              {
+                "ipa": "a",
+                "text": "ah"
+              }
+            ],
+            " et ",
+            [
+              "PhonemeCommand",
+              {
+                "ipa": "b"
+              }
+            ],
+            "rien"
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            [
+              "IndexCommand",
+              {
+                "index": 7
+              }
+            ],
+            "   ",
+            [
+              "IndexCommand",
+              {
+                "index": 8
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            [
+              "IndexCommand",
+              {
+                "index": 9
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            "texte",
+            42,
+            [
+              "IndexCommand"
+            ],
+            [
+              "IndexCommand",
+              {
+                "index": "x"
+              }
+            ],
+            [
+              "IndexCommand",
+              {
+                "index": true
+              }
+            ],
+            [
+              "CharacterModeCommand",
+              {
+                "state": "yes"
+              }
+            ],
+            [
+              "LangChangeCommand",
+              {
+                "lang": 3
+              }
+            ],
+            [
+              "RateCommand",
+              {
+                "_offset": 0,
+                "_multiplier": -1,
+                "isDefault": false
+              }
+            ],
+            [
+              "BreakCommand",
+              {
+                "time": -5
+              }
+            ],
+            [
+              "UnknownCommand",
+              {
+                "value": 1
+              }
+            ],
+            [
+              "IndexCommand",
+              {
+                "index": 10
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": "pas une liste"
+        },
+        {
+          "type": "speak"
+        }
+      ]
+    }
+  ]
+}

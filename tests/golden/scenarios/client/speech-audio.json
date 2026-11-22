@@ -1,0 +1,116 @@
+{
+  "description": "Tones and NVDA wave files through the audio player, including refused values and path traversal.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR",
+    "--nvda-waves-dir",
+    "{waves}",
+    "--audio-player",
+    "{player}"
+  ],
+  "waves": {
+    "error.wav": "52494646000000005741564564617461",
+    "sub/deep.wav": "5249464601"
+  },
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "tone",
+          "hz": 440,
+          "length": 40,
+          "left": 50,
+          "right": 50
+        }
+      ],
+      "settle": true
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "tone",
+          "hz": 880.5,
+          "length": 10
+        }
+      ],
+      "settle": true
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "tone",
+          "hz": 0,
+          "length": 40
+        },
+        {
+          "type": "tone",
+          "hz": 440,
+          "length": 6000
+        },
+        {
+          "type": "tone",
+          "hz": "440",
+          "length": 40
+        }
+      ],
+      "settle": true
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "wave",
+          "fileName": "waves\\error.wav"
+        }
+      ],
+      "settle": true
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "wave",
+          "fileName": "waves/sub/deep.wav"
+        }
+      ],
+      "settle": true
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "wave",
+          "fileName": "..\\..\\etc\\passwd"
+        },
+        {
+          "type": "wave",
+          "fileName": "/etc/passwd"
+        },
+        {
+          "type": "wave",
+          "fileName": "waves\\missing.wav"
+        },
+        {
+          "type": "wave",
+          "fileName": 5
+        }
+      ],
+      "settle": true
+    }
+  ]
+}

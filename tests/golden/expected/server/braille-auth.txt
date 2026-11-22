@@ -1,0 +1,11 @@
+# braille-auth.json: BrlAPI authorization: a wrong key is refused; the right key is accepted.
+startup:
+  trace {"src": "dbus", "call": "ready", "args": [["org.gnome.Mutter.RemoteDesktop", "org.gnome.Orca1.Service"]]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 1: {"orca": "raw_auth", "key": "0000000000000000000000000000000000000000000000000000000000000000"}
+  orca <- {"action": "raw_auth", "packets": [{"type": 118, "payload": "00 00 00 08"}, {"type": 97, "payload": "00 00 00 4b"}, {"type": 101, "payload": "00 00 00 11"}, {"closed": true}]}
+step 2: {"orca": "connect"}
+  orca <- {"action": "connect", "displaySize": [0, 1], "driverName": "RDAccess", "modelIdentifier": "nvda"}
+shutdown:
+returncode: 0

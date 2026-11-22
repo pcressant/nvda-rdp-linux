@@ -1,0 +1,102 @@
+{
+  "description": "Without BRLTTY, the fallback size is advertised, cells are only logged and no notification is spoken.",
+  "args": [
+    "--language",
+    "fr_FR",
+    "--cells",
+    "32"
+  ],
+  "fake": {
+    "brlapi_fail": true
+  },
+  "startup_trace": [
+    {
+      "src": "atspi",
+      "call": "registerEventListener",
+      "args": [
+        "window:deactivate"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "connect": "braille"
+    },
+    {
+      "send": "braille",
+      "fixture": "braille-server-protocol-version-v1.hex"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "protocol_version",
+          "version": 2,
+          "channel": "NVDA-BRAILLE"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "attribute_request",
+          "attribute": "numCells"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "numRows"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "fixture": "braille-server-gesture-map-request-v1.hex"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "display",
+          "cells": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "disconnect": "braille"
+    }
+  ]
+}

@@ -1,0 +1,238 @@
+.\" SPDX-License-Identifier: GPL-2.0-or-later
+.TH NVDA-RDP-CLIENT 1 2026-11-22 "nvda-rdp-linux 0.2.0" "User Commands"
+.SH NAME
+nvda-rdp-client \- speak and braille a remote Windows NVDA in an RDP session
+.SH SYNOPSIS
+.B nvda-rdp-client
+.RI [ options ]
+.SH DESCRIPTION
+.B nvda-rdp-client
+is the Linux side of RDAccess, the NVDA add-on that sends the speech and
+braille of a remote NVDA screen reader over the dynamic virtual channels
+.B NVDA-SPEECH
+and
+.B NVDA-BRAILLE
+of an RDP connection.
+.PP
+An RDP client built on FreeRDP 3, such as
+.BR xfreerdp3 (1)
+or
+.BR remmina (1),
+loads the
+.B nvda-rdp-dvc
+plugin, which passes both channels to
+.B nvda-rdp-client
+through two Unix sockets.
+.B nvda-rdp-client
+speaks through Speech Dispatcher, plays NVDA's tones and sounds through
+PipeWire, and shows the braille on the local display through BRLTTY while the
+RDP window has the focus. The keys of the braille display go back to the
+remote NVDA.
+.PP
+One process serves both channels and every RDP connection, one after the
+other. It is meant to run for the whole graphical session, as the systemd user
+service
+.BR nvda-rdp-client.service .
+If Speech Dispatcher cannot be reached at start, speech is disabled and
+braille keeps working; BRLTTY is retried every 5 seconds.
+.SH OPTIONS
+.TP
+.BI \-\-log\-level " LEVEL"
+Logging level:
+.BR DEBUG ,
+.BR INFO ,
+.B WARNING
+or
+.BR ERROR .
+Default:
+.BR INFO .
+.TP
+.BI \-\-language " LANGUAGE"
+Language of the voice and of the connection messages, for example
+.BR fr_FR .
+It is also reported to the remote NVDA as the language of the local
+synthesizer. Default: from
+.BR LC_ALL ,
+.B LC_MESSAGES
+or
+.BR LANG ,
+else
+.BR en .
+.TP
+.BI \-\-notify " MODE"
+Announce connections and disconnections:
+.BR none ,
+.B message
+(spoken, and shown in braille when a display is connected),
+.B sound
+or
+.BR both .
+Default:
+.BR message .
+.TP
+.BI \-\-nvda\-waves\-dir " DIRECTORY"
+Directory holding a copy of NVDA's
+.B waves
+directory, from which NVDA's sounds are played. Only files inside it are
+played. Default:
+.BR $NVDA_WAVES_DIR .
+.TP
+.BI \-\-audio\-player " COMMAND"
+Program that plays a WAV file given on its standard input. Default:
+.BR "pw\-play \-" .
+.SS Speech
+.TP
+.B \-\-no\-speech
+Do not handle the
+.B NVDA-SPEECH
+channel.
+.TP
+.BI \-\-rate " RATE"
+Speech rate on Orca's 0 to 100 scale. Default: 75.
+.TP
+.BI \-\-output\-module " MODULE"
+Speech Dispatcher output module. Default:
+.BR espeak\-ng .
+.TP
+.BI \-\-pitch\-change " OFFSET"
+Pitch offset applied to remote speech, as RDAccess's "incoming speech pitch
+change"; 0 disables it. Default: 10.
+.TP
+.B \-\-enable\-pause
+Honour NVDA's pause requests. Off by default: the espeak-ng module of Speech
+Dispatcher repeated the sentence when speech resumed.
+.TP
+.B \-\-settings\-management
+Let the remote NVDA read and change the local voice, rate, pitch and volume
+(RDAccess's "driver settings management"). Off by default.
+.SS Braille
+.TP
+.B \-\-no\-braille
+Do not handle the
+.B NVDA-BRAILLE
+channel.
+.TP
+.B \-\-braille\-capture
+Only log the braille cells; do not use BrlAPI.
+.TP
+.BI \-\-cells " N" "\fR, \fP" \-\-rows " N"
+Display size reported to the remote NVDA until BRLTTY gives the real one.
+Default: 40 cells, 1 row.
+.TP
+.BI \-\-brlapi\-priority " N"
+BrlAPI priority, from 1 to 100, while the RDP window has the focus. Default:
+60.
+.TP
+.B \-\-no\-braille\-input
+Do not send the keys of the braille display to the remote NVDA.
+.TP
+.BI \-\-focus\-application " NAME"
+Name of the window or application of the RDP client: the remote braille is
+shown while a window whose name contains
+.I NAME
+has the focus. Repeatable. Default:
+.B freerdp
+and
+.BR remmina .
+.TP
+.B \-\-sync\-caps\-lock
+Align the local Caps Lock with the remote NVDA's when the RDP window loses the
+focus. It uses the X11 tools
+.BR xdotool (1)
+and
+.BR xset (1),
+and may not work under Wayland.
+.SH ENVIRONMENT
+.TP
+.B NVDA_WAVES_DIR
+Default of
+.BR \-\-nvda\-waves\-dir .
+.TP
+.B XDG_RUNTIME_DIR
+Directory of the sockets shared with the plugin; the RDP client must run with
+the same value.
+.TP
+.BR NVDA_RDP_SOCKET ", " NVDA_RDP_BRAILLE_SOCKET
+Paths of the speech and braille sockets, instead of the default ones. The
+plugin reads the same variables.
+.TP
+.BR LC_ALL ", " LC_MESSAGES ", " LANG
+Default language.
+.SH FILES
+.TP
+.I $XDG_RUNTIME_DIR/nvda-rdp-linux/speech.sock
+.TQ
+.I $XDG_RUNTIME_DIR/nvda-rdp-linux/braille.sock
+Sockets the plugin connects to; their directory has mode 0700 and the
+sockets 0600.
+.TP
+.I /usr/lib/systemd/user/nvda-rdp-client.service
+The user service.
+.TP
+.I ~/.config/nvda-rdp-linux/environment
+Optional settings of the service, one
+.IB NAME = value
+per line:
+.B NVDA_WAVES_DIR
+and
+.BR NVDA_RDP_OPTIONS ,
+the options given to
+.BR nvda-rdp-client .
+Restart the service after changing it.
+.SH EXAMPLES
+Start the service now and at each graphical login:
+.PP
+.RS
+.nf
+systemctl \-\-user enable \-\-now nvda\-rdp\-client.service
+.fi
+.RE
+.PP
+Connect with xfreerdp3 (xfreerdp on NixOS), which asks for the password:
+.PP
+.RS
+.nf
+xfreerdp3 /v:HOST /u:USER /dvc:nvda\-rdp\-dvc /sound:sys:pulse +f
+.fi
+.RE
+.PP
+In Remmina, set "Dynamic virtual channel" to
+.B nvda-rdp-dvc
+in the advanced settings of the RDP connection.
+.PP
+Let the remote NVDA change the local voice, and play NVDA's sounds, with the
+file
+.IR ~/.config/nvda-rdp-linux/environment :
+.PP
+.RS
+.nf
+NVDA_WAVES_DIR=/home/user/nvda\-waves
+NVDA_RDP_OPTIONS=\-\-settings\-management
+.fi
+.RE
+.PP
+Follow the log of the service:
+.PP
+.RS
+.nf
+journalctl \-\-user \-u nvda\-rdp\-client \-f
+.fi
+.RE
+.SH NOTES
+The speech and braille that pass through the client are what the remote
+screen reader presents, documents and typed text included. The log contains
+the spoken text and the braille cells at the
+.B INFO
+and
+.B DEBUG
+levels; keep it private.
+.PP
+RDAccess 1.x is not supported.
+.SH SEE ALSO
+.BR nvda\-rdp\-server (7),
+.BR xfreerdp3 (1),
+.BR remmina (1),
+.BR speech\-dispatcher (1),
+.BR brltty (1)
+.PP
+https://github.com/pcressant/nvda\-rdp\-linux

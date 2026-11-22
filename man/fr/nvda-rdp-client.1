@@ -1,0 +1,240 @@
+.\" SPDX-License-Identifier: GPL-2.0-or-later
+.\" Traduction de man/nvda-rdp-client.1, qui fait référence.
+.TH NVDA-RDP-CLIENT 1 2026-11-22 "nvda-rdp-linux 0.2.0" "Commandes utilisateur"
+.SH NOM
+nvda-rdp-client \- parole et braille d'un NVDA Windows distant dans une session RDP
+.SH SYNOPSIS
+.B nvda-rdp-client
+.RI [ options ]
+.SH DESCRIPTION
+.B nvda-rdp-client
+est le côté Linux de RDAccess, l'extension de NVDA qui envoie la parole et le
+braille d'un lecteur d'écran NVDA distant par les canaux virtuels dynamiques
+.B NVDA-SPEECH
+et
+.B NVDA-BRAILLE
+d'une connexion RDP.
+.PP
+Un client RDP fondé sur FreeRDP 3, comme
+.BR xfreerdp3 (1)
+ou
+.BR remmina (1),
+charge le greffon
+.BR nvda-rdp-dvc ,
+qui transmet les deux canaux à
+.B nvda-rdp-client
+par deux sockets Unix.
+.B nvda-rdp-client
+parle par Speech Dispatcher, joue les bips et les sons de NVDA par PipeWire,
+et affiche le braille sur la plage locale par BRLTTY tant que la fenêtre RDP a
+le focus. Les touches de la plage braille repartent vers le NVDA distant.
+.PP
+Un seul processus sert les deux canaux et toutes les connexions RDP, l'une
+après l'autre. Il est fait pour tourner pendant toute la session graphique,
+comme service utilisateur systemd
+.BR nvda-rdp-client.service .
+Si Speech Dispatcher est injoignable au démarrage, la parole est désactivée
+et le braille continue de fonctionner ; BRLTTY est réessayé toutes les
+5 secondes.
+.SH OPTIONS
+.TP
+.BI \-\-log\-level " NIVEAU"
+Niveau de journalisation :
+.BR DEBUG ,
+.BR INFO ,
+.B WARNING
+ou
+.BR ERROR .
+Par défaut :
+.BR INFO .
+.TP
+.BI \-\-language " LANGUE"
+Langue de la voix et des messages de connexion, par exemple
+.BR fr_FR .
+Elle est aussi annoncée au NVDA distant comme langue du synthétiseur local.
+Par défaut : d'après
+.BR LC_ALL ,
+.B LC_MESSAGES
+ou
+.BR LANG ,
+sinon
+.BR en .
+.TP
+.BI \-\-notify " MODE"
+Annonce des connexions et déconnexions :
+.BR none ,
+.B message
+(dit, et affiché en braille quand une plage est connectée),
+.B sound
+ou
+.BR both .
+Par défaut :
+.BR message .
+.TP
+.BI \-\-nvda\-waves\-dir " RÉPERTOIRE"
+Répertoire contenant une copie du répertoire
+.B waves
+de NVDA, d'où sont joués les sons de NVDA. Seuls les fichiers qu'il contient
+sont joués. Par défaut :
+.BR $NVDA_WAVES_DIR .
+.TP
+.BI \-\-audio\-player " COMMANDE"
+Programme qui joue un fichier WAV reçu sur son entrée standard. Par défaut :
+.BR "pw\-play \-" .
+.SS Parole
+.TP
+.B \-\-no\-speech
+Ne pas traiter le canal
+.BR NVDA-SPEECH .
+.TP
+.BI \-\-rate " DÉBIT"
+Débit de parole sur l'échelle de 0 à 100 d'Orca. Par défaut : 75.
+.TP
+.BI \-\-output\-module " MODULE"
+Module de sortie de Speech Dispatcher. Par défaut :
+.BR espeak\-ng .
+.TP
+.BI \-\-pitch\-change " DÉCALAGE"
+Décalage de hauteur appliqué à la parole distante, comme le « changement de
+hauteur de la parole entrante » de RDAccess ; 0 le désactive. Par défaut : 10.
+.TP
+.B \-\-enable\-pause
+Respecter les demandes de pause de NVDA. Désactivé par défaut : le module
+espeak-ng de Speech Dispatcher répétait la phrase à la reprise.
+.TP
+.B \-\-settings\-management
+Laisser le NVDA distant lire et modifier la voix, le débit, la hauteur et le
+volume locaux (la « gestion des paramètres du pilote » de RDAccess).
+Désactivé par défaut.
+.SS Braille
+.TP
+.B \-\-no\-braille
+Ne pas traiter le canal
+.BR NVDA-BRAILLE .
+.TP
+.B \-\-braille\-capture
+Seulement journaliser les cellules braille ; ne pas utiliser BrlAPI.
+.TP
+.BI \-\-cells " N" "\fR, \fP" \-\-rows " N"
+Taille de plage annoncée au NVDA distant jusqu'à ce que BRLTTY donne la
+vraie. Par défaut : 40 cellules, 1 ligne.
+.TP
+.BI \-\-brlapi\-priority " N"
+Priorité BrlAPI, de 1 à 100, tant que la fenêtre RDP a le focus. Par défaut :
+60.
+.TP
+.B \-\-no\-braille\-input
+Ne pas envoyer les touches de la plage braille au NVDA distant.
+.TP
+.BI \-\-focus\-application " NOM"
+Nom de la fenêtre ou de l'application du client RDP : le braille distant est
+affiché tant qu'une fenêtre dont le nom contient
+.I NOM
+a le focus. Répétable. Par défaut :
+.B freerdp
+et
+.BR remmina .
+.TP
+.B \-\-sync\-caps\-lock
+Aligner le verrouillage des majuscules local sur celui du NVDA distant quand
+la fenêtre RDP perd le focus. Utilise les outils X11
+.BR xdotool (1)
+et
+.BR xset (1),
+et peut ne pas fonctionner sous Wayland.
+.SH ENVIRONNEMENT
+.TP
+.B NVDA_WAVES_DIR
+Valeur par défaut de
+.BR \-\-nvda\-waves\-dir .
+.TP
+.B XDG_RUNTIME_DIR
+Répertoire des sockets partagées avec le greffon ; le client RDP doit tourner
+avec la même valeur.
+.TP
+.BR NVDA_RDP_SOCKET ", " NVDA_RDP_BRAILLE_SOCKET
+Chemins des sockets de parole et de braille, à la place de ceux par défaut. Le
+greffon lit les mêmes variables.
+.TP
+.BR LC_ALL ", " LC_MESSAGES ", " LANG
+Langue par défaut.
+.SH FICHIERS
+.TP
+.I $XDG_RUNTIME_DIR/nvda-rdp-linux/speech.sock
+.TQ
+.I $XDG_RUNTIME_DIR/nvda-rdp-linux/braille.sock
+Sockets auxquelles le greffon se connecte ; leur répertoire est en mode 0700
+et les sockets en 0600.
+.TP
+.I /usr/lib/systemd/user/nvda-rdp-client.service
+Le service utilisateur.
+.TP
+.I ~/.config/nvda-rdp-linux/environment
+Réglages facultatifs du service, un
+.IB NOM = valeur
+par ligne :
+.B NVDA_WAVES_DIR
+et
+.BR NVDA_RDP_OPTIONS ,
+les options passées à
+.BR nvda-rdp-client .
+Redémarrer le service après l'avoir modifié.
+.SH EXEMPLES
+Démarrer le service maintenant et à chaque ouverture de session graphique :
+.PP
+.RS
+.nf
+systemctl \-\-user enable \-\-now nvda\-rdp\-client.service
+.fi
+.RE
+.PP
+Se connecter avec xfreerdp3 (xfreerdp sous NixOS), qui demande le mot de
+passe :
+.PP
+.RS
+.nf
+xfreerdp3 /v:HÔTE /u:UTILISATEUR /dvc:nvda\-rdp\-dvc /sound:sys:pulse +f
+.fi
+.RE
+.PP
+Dans Remmina, mettre
+.B nvda-rdp-dvc
+dans le champ du canal virtuel dynamique (« Dynamic virtual channel » en
+anglais), dans les réglages avancés de la connexion RDP.
+.PP
+Laisser le NVDA distant modifier la voix locale, et jouer les sons de NVDA,
+avec le fichier
+.IR ~/.config/nvda-rdp-linux/environment :
+.PP
+.RS
+.nf
+NVDA_WAVES_DIR=/home/utilisateur/nvda\-waves
+NVDA_RDP_OPTIONS=\-\-settings\-management
+.fi
+.RE
+.PP
+Suivre le journal du service :
+.PP
+.RS
+.nf
+journalctl \-\-user \-u nvda\-rdp\-client \-f
+.fi
+.RE
+.SH NOTES
+La parole et le braille qui passent par le client sont ce que présente le
+lecteur d'écran distant, documents et texte saisi compris. Le journal contient
+le texte dit et les cellules braille aux niveaux
+.B INFO
+et
+.BR DEBUG ;
+gardez-le privé.
+.PP
+RDAccess 1.x n'est pas pris en charge.
+.SH VOIR AUSSI
+.BR nvda\-rdp\-server (7),
+.BR xfreerdp3 (1),
+.BR remmina (1),
+.BR speech\-dispatcher (1),
+.BR brltty (1)
+.PP
+https://github.com/pcressant/nvda\-rdp\-linux

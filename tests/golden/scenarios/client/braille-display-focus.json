@@ -1,0 +1,294 @@
+{
+  "description": "Remote cells reach BrlAPI only while the RDP client has focus; the last cells are shown again on activation.",
+  "args": [
+    "--no-speech",
+    "--language",
+    "fr_FR"
+  ],
+  "startup_trace": [
+    {
+      "src": "atspi",
+      "call": "registerEventListener",
+      "args": [
+        "window:deactivate"
+      ]
+    },
+    {
+      "src": "brlapi",
+      "call": "ignoreKeys",
+      "args": [
+        1,
+        [
+          0
+        ]
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "wait_trace": {
+        "src": "brlapi",
+        "call": "ignoreKeys"
+      }
+    },
+    {
+      "connect": "braille"
+    },
+    {
+      "send": "braille",
+      "fixture": "braille-server-protocol-version-v1.hex"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "protocol_version",
+          "version": 2,
+          "channel": "NVDA-BRAILLE"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "display",
+          "cells": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "focus": [
+        "window:activate",
+        "xfreerdp",
+        "FreeRDP: windows-remote"
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "display",
+          "cells": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "focus": [
+        "window:activate",
+        "firefox",
+        "Mozilla Firefox"
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "display",
+          "cells": [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "focus": [
+        "window:deactivate",
+        "xfreerdp",
+        "FreeRDP: windows-remote"
+      ]
+    },
+    {
+      "focus": [
+        "window:activate",
+        "org.remmina.Remmina",
+        "Remmina"
+      ]
+    },
+    {
+      "focus": [
+        "window:deactivate",
+        "firefox",
+        "Mozilla Firefox"
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "display",
+          "cells": [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "focus": [
+        "window:deactivate",
+        "org.remmina.Remmina",
+        "Remmina"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "description": "A legacy attribute request before the protocol version announcement triggers the announcement.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR"
+  ],
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-language-request-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    }
+  ]
+}

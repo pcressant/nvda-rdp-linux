@@ -1,0 +1,64 @@
+{
+  "description": "Speech Dispatcher never reports the end: no index is sent until cancel, which reports index 0.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR"
+  ],
+  "fake": {
+    "ssip_auto_end": false
+  },
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            "long texte",
+            [
+              "IndexCommand",
+              {
+                "index": 1
+              }
+            ],
+            " suite",
+            [
+              "IndexCommand",
+              {
+                "index": 2
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "cancel"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "cancel"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "description": "Braille: the RDAccess client attaches, reports a 40-cell display; Orca connects through BrlAPI and writes a line, which reaches the client as cells.",
+  "component": "brlapi",
+  "steps": [
+    {
+      "accept": "braille"
+    },
+    {
+      "send": "braille",
+      "hex": "11"
+    },
+    {
+      "send": "braille",
+      "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "numCells",
+          "value": 40,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "connect"
+    },
+    {
+      "orca": "enter"
+    },
+    {
+      "orca": "write",
+      "text": "Bonjour",
+      "cursor": 3
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "timeSinceInput",
+          "type": "attribute_request"
+        },
+        {
+          "attribute": "other",
+          "type": "attribute_request"
+        }
+      ]
+    },
+    {
+      "orca": "leave"
+    },
+    {
+      "orca": "close"
+    }
+  ]
+}

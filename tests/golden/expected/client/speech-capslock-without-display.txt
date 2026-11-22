@@ -1,0 +1,25 @@
+# speech-capslock-without-display.json: Caps Lock synchronization is disabled without an X11 display.
+startup:
+  trace {"src": "ssip", "call": "connect", "args": [["nvda-rdp-linux"], {"autospawn": true, "component": "rdaccess"}]}
+  trace {"src": "ssip", "call": "set_output_module", "args": ["espeak-ng"]}
+  trace {"src": "ssip", "call": "set_language", "args": ["fr-FR"]}
+  trace {"src": "ssip", "call": "set_rate", "args": [50]}
+step 1: {"connect": "speech"}
+  speech <- {"hex": "11"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["Parole distante connectée", false, null]}
+step 2: {"send": "speech", "fixture": "server-protocol-version-v1.hex"}
+  speech <- {"hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  speech <- {"text": "{\"attribute\": \"rdAccessVersion\", \"type\": \"attribute_request\"}\n"}
+  speech <- {"text": "{\"attribute\": \"nvdaVersion\", \"type\": \"attribute_request\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 3: {"send": "speech", "fixture": "server-protocol-version-v2-jsonl.hex"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 4: {"send": "speech", "json": [{"type": "attribute_value", "attribute": "capsLockToggle", "value": true}], "settle": true}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+shutdown:
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["Parole distante déconnectée", false, null]}
+  trace {"src": "ssip", "call": "close", "args": []}
+returncode: 0

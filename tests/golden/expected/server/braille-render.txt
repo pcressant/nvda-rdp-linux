@@ -1,0 +1,50 @@
+# braille-render.json: Braille rendering: regions, attributes, cursor, truncation, duplicate writes, writes outside tty mode.
+startup:
+  trace {"src": "dbus", "call": "ready", "args": [["org.gnome.Mutter.RemoteDesktop", "org.gnome.Orca1.Service"]]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 1: {"accept": "braille"}
+step 2: {"send": "braille", "hex": "11"}
+  braille <- {"hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+step 3: {"send": "braille", "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  braille <- {"json": "{\"attribute\": \"gestureMap\", \"type\": \"attribute_request\"}"}
+  braille <- {"json": "{\"channel\": \"NVDA-BRAILLE\", \"type\": \"protocol_version\", \"version\": 2}"}
+step 4: {"send": "braille", "json": [{"attribute": "numCells", "value": 40, "type": "attribute_value"}]}
+step 5: {"orca": "connect"}
+  orca <- {"action": "connect", "displaySize": [40, 1], "driverName": "RDAccess", "modelIdentifier": "nvda"}
+step 6: {"orca": "write", "text": "hors tty"}
+  orca <- {"action": "write"}
+step 7: {"orca": "enter"}
+  orca <- {"action": "enter", "error": "OperationError: Illegal instruction"}
+step 8: {"orca": "write", "text": "Texte", "cursor": 0}
+  braille <- {"json": "{\"cells\": [94, 17, 45, 30, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"type\": \"display\"}"}
+  orca <- {"action": "write"}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 9: {"orca": "write", "text": "Texte", "cursor": 0}
+  orca <- {"action": "write"}
+step 10: {"orca": "write", "text": "abc", "regionBegin": 10, "regionSize": 3, "attrOr": [192, 0, 64]}
+  braille <- {"json": "{\"cells\": [0, 0, 0, 0, 0, 0, 0, 0, 0, 193, 3, 73, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"type\": \"display\"}"}
+  orca <- {"action": "write"}
+step 11: {"orca": "write", "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+  braille <- {"json": "{\"cells\": [45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45], \"type\": \"display\"}"}
+  orca <- {"action": "write"}
+step 12: {"orca": "write", "text": "Majuscule É à ç €", "cursor": 1}
+  braille <- {"json": "{\"cells\": [205, 1, 26, 37, 14, 9, 37, 7, 17, 0, 127, 0, 55, 0, 47, 0, 209, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"type\": \"display\"}"}
+  orca <- {"action": "write"}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 13: {"orca": "write", "text": "", "cursor": 40}
+  braille <- {"json": "{\"cells\": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192], \"type\": \"display\"}"}
+  orca <- {"action": "write"}
+step 14: {"orca": "leave"}
+  orca <- {"action": "leave", "error": "OperationError: Illegal instruction"}
+step 15: {"orca": "enter"}
+  orca <- {"action": "enter"}
+step 16: {"orca": "write", "text": "retour"}
+  braille <- {"json": "{\"cells\": [23, 17, 30, 21, 37, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192], \"type\": \"display\"}"}
+  orca <- {"action": "write"}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+shutdown:
+returncode: 0

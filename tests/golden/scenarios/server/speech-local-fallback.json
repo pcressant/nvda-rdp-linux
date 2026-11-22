@@ -1,0 +1,124 @@
+{
+  "description": "Speech module without NVDA attached: messages go to the session's usual Speech Dispatcher.",
+  "component": "speechd",
+  "fake": {
+    "ssip_events": [
+      "begin",
+      "end"
+    ]
+  },
+  "steps": [
+    {
+      "module": [
+        "INIT"
+      ]
+    },
+    {
+      "module": [
+        "AUDIO",
+        "audio_output_method=libao",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "LOGLEVEL",
+        "log_level=3",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SET",
+        "rate=0",
+        "pitch=0",
+        "pitch_range=0",
+        "volume=0",
+        "punctuation_mode=some",
+        "spelling_mode=off",
+        "cap_let_recogn=none",
+        "language=fr-FR",
+        "synthesis_voice=NULL",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SPEAK",
+        "<speak>Bonjour <mark name=\"m1\"/>monde</speak>",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "LIST VOICES"
+      ]
+    },
+    {
+      "module": [
+        "CHAR",
+        "a",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "KEY",
+        "space",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SOUND_ICON",
+        "bell",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SPEAK",
+        "",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SET",
+        "rate=40",
+        "pitch=-20",
+        "volume=50",
+        "language=en-US",
+        "synthesis_voice=NULL",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SPEAK",
+        "<speak>hello</speak>",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "STOP"
+      ]
+    },
+    {
+      "module": [
+        "BOGUS"
+      ]
+    },
+    {
+      "module": [
+        "DEBUG ON /tmp"
+      ]
+    },
+    {
+      "module": [
+        "QUIT"
+      ]
+    }
+  ]
+}

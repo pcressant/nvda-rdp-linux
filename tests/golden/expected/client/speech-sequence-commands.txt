@@ -1,0 +1,103 @@
+# speech-sequence-commands.json: Synthetic speak sequences covering every speech command, invalid items and edge cases of index placement.
+startup:
+  trace {"src": "ssip", "call": "connect", "args": [["nvda-rdp-linux"], {"autospawn": true, "component": "rdaccess"}]}
+  trace {"src": "ssip", "call": "set_output_module", "args": ["espeak-ng"]}
+  trace {"src": "ssip", "call": "set_language", "args": ["fr-FR"]}
+  trace {"src": "ssip", "call": "set_rate", "args": [50]}
+step 1: {"connect": "speech"}
+  speech <- {"hex": "11"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["Parole distante connectée", false, null]}
+step 2: {"send": "speech", "fixture": "server-protocol-version-v1.hex"}
+  speech <- {"hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  speech <- {"text": "{\"attribute\": \"rdAccessVersion\", \"type\": \"attribute_request\"}\n"}
+  speech <- {"text": "{\"attribute\": \"nvdaVersion\", \"type\": \"attribute_request\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 3: {"send": "speech", "fixture": "server-protocol-version-v2-jsonl.hex"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 4: {"send": "speech", "json": [{"type": "speak", "sequence": [["IndexCommand", {"index": 1}], "Bonjour ", ["LangChangeCommand", {"lang": "en_US"}], "hello ", ["IndexCommand", {"index": 2}], ["LangChangeCommand", {"lang": null}], "retour", ["IndexCommand", {"index": 3}]]}]}
+  speech <- {"text": "{\"index\": 1, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"index\": 2, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"index\": 3, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"index\": 0, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+  trace {"src": "ssip", "call": "set_pitch", "args": [20]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["Bonjour ", true, ["end"]]}
+  trace {"src": "ssip", "call": "set_language", "args": ["en-US"]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["hello ", true, ["end"]]}
+  trace {"src": "ssip", "call": "set_language", "args": ["fr-FR"]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["retour", true, ["end"]]}
+step 5: {"send": "speech", "json": [{"type": "speak", "sequence": [["RateCommand", {"_offset": 20, "_multiplier": 1, "isDefault": false}], "vite ", ["RateCommand", {"_offset": 0, "_multiplier": 1, "isDefault": true}], ["PitchCommand", {"_offset": 0, "_multiplier": 1.5, "isDefault": false}], "aigu ", ["PitchCommand", {"_offset": 0, "_multiplier": 1, "isDefault": true}], ["VolumeCommand", {"_offset": 0, "_multiplier": 0.5, "isDefault": false}], "doux", ["VolumeCommand", {"_offset": 0, "_multiplier": 1, "isDefault": true}]]}]}
+  speech <- {"text": "{\"index\": 0, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+  trace {"src": "ssip", "call": "set_rate", "args": [90]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["vite ", false, null]}
+  trace {"src": "ssip", "call": "set_pitch", "args": [50]}
+  trace {"src": "ssip", "call": "set_rate", "args": [50]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["aigu ", false, null]}
+  trace {"src": "ssip", "call": "set_pitch", "args": [0]}
+  trace {"src": "ssip", "call": "set_volume", "args": [0]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["doux", true, ["end"]]}
+step 6: {"send": "speech", "json": [{"type": "speak", "sequence": [["CharacterModeCommand", {"state": true}], "a", ["CharacterModeCommand", {"state": false}], " mot", ["IndexCommand", {"index": 4}]]}]}
+  speech <- {"text": "{\"index\": 4, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"index\": 0, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+  trace {"src": "ssip", "call": "set_pitch", "args": [20]}
+  trace {"src": "ssip", "call": "set_volume", "args": [100]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [true]}
+  trace {"src": "ssip", "call": "speak", "args": ["a", false, null]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": [" mot", true, ["end"]]}
+step 7: {"send": "speech", "json": [{"type": "speak", "sequence": ["avant", ["BreakCommand", {"time": 300}], "après", ["BreakCommand", {"time": 20000}], "fin", ["EndUtteranceCommand", {}], "suite"]}]}
+  speech <- {"text": "{\"index\": 0, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["avant", false, null]}
+  trace {"src": "ssip", "call": "set_data_mode", "args": ["ssml"]}
+  trace {"src": "ssip", "call": "speak", "args": ["<speak><break time=\"300ms\"/></speak>", false, null]}
+  trace {"src": "ssip", "call": "set_data_mode", "args": ["text"]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["après", false, null]}
+  trace {"src": "ssip", "call": "set_data_mode", "args": ["ssml"]}
+  trace {"src": "ssip", "call": "speak", "args": ["<speak><break time=\"10000ms\"/></speak>", false, null]}
+  trace {"src": "ssip", "call": "set_data_mode", "args": ["text"]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["fin", false, null]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["suite", true, ["end"]]}
+step 8: {"send": "speech", "json": [{"type": "speak", "sequence": [["PhonemeCommand", {"ipa": "a", "text": "ah"}], " et ", ["PhonemeCommand", {"ipa": "b"}], "rien"]}]}
+  speech <- {"text": "{\"index\": 0, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["ah et rien", true, ["end"]]}
+step 9: {"send": "speech", "json": [{"type": "speak", "sequence": [["IndexCommand", {"index": 7}], "   ", ["IndexCommand", {"index": 8}]]}]}
+  speech <- {"text": "{\"index\": 7, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"index\": 8, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"index\": 0, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 10: {"send": "speech", "json": [{"type": "speak", "sequence": [["IndexCommand", {"index": 9}]]}]}
+  speech <- {"text": "{\"index\": 9, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"index\": 0, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+step 11: {"send": "speech", "json": [{"type": "speak", "sequence": ["texte", 42, ["IndexCommand"], ["IndexCommand", {"index": "x"}], ["IndexCommand", {"index": true}], ["CharacterModeCommand", {"state": "yes"}], ["LangChangeCommand", {"lang": 3}], ["RateCommand", {"_offset": 0, "_multiplier": -1, "isDefault": false}], ["BreakCommand", {"time": -5}], ["UnknownCommand", {"value": 1}], ["IndexCommand", {"index": 10}]]}]}
+  speech <- {"text": "{\"index\": 10, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"index\": 0, \"type\": \"index\"}\n"}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["texte", true, ["end"]]}
+step 12: {"send": "speech", "json": [{"type": "speak", "sequence": "pas une liste"}, {"type": "speak"}]}
+  speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
+shutdown:
+  trace {"src": "ssip", "call": "set_pitch", "args": [0]}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["Parole distante déconnectée", false, null]}
+  trace {"src": "ssip", "call": "close", "args": []}
+returncode: 0

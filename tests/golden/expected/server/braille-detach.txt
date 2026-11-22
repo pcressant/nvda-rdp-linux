@@ -1,0 +1,38 @@
+# braille-detach.json: XOFF detaches the RDAccess client; a new XON negotiates again and the current line is sent again.
+startup:
+  trace {"src": "dbus", "call": "ready", "args": [["org.gnome.Mutter.RemoteDesktop", "org.gnome.Orca1.Service"]]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 1: {"accept": "braille"}
+step 2: {"send": "braille", "hex": "11"}
+  braille <- {"hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+step 3: {"send": "braille", "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  braille <- {"json": "{\"attribute\": \"gestureMap\", \"type\": \"attribute_request\"}"}
+  braille <- {"json": "{\"channel\": \"NVDA-BRAILLE\", \"type\": \"protocol_version\", \"version\": 2}"}
+step 4: {"send": "braille", "json": [{"attribute": "numCells", "value": 40, "type": "attribute_value"}]}
+step 5: {"orca": "connect"}
+  orca <- {"action": "connect", "displaySize": [40, 1], "driverName": "RDAccess", "modelIdentifier": "nvda"}
+step 6: {"orca": "enter"}
+  orca <- {"action": "enter"}
+step 7: {"orca": "write", "text": "avant"}
+  braille <- {"json": "{\"cells\": [1, 39, 1, 29, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"type\": \"display\"}"}
+  orca <- {"action": "write"}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 8: {"send": "braille", "hex": "13"}
+step 9: {"orca": "write", "text": "pendant"}
+  orca <- {"action": "write"}
+step 10: {"send": "braille", "hex": "11"}
+  braille <- {"hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+step 11: {"send": "braille", "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  braille <- {"json": "{\"attribute\": \"gestureMap\", \"type\": \"attribute_request\"}"}
+  braille <- {"json": "{\"channel\": \"NVDA-BRAILLE\", \"type\": \"protocol_version\", \"version\": 2}"}
+step 12: {"send": "braille", "json": [{"attribute": "numCells", "value": 40, "type": "attribute_value"}]}
+  braille <- {"json": "{\"cells\": [15, 17, 29, 25, 1, 29, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"type\": \"display\"}"}
+step 13: {"orca": "write", "text": "après"}
+  braille <- {"json": "{\"cells\": [1, 15, 23, 46, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"type\": \"display\"}"}
+  orca <- {"action": "write"}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+shutdown:
+returncode: 0

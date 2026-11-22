@@ -1,0 +1,30 @@
+{
+  "description": "Connection notifications as message and sound, English locale.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "en_US",
+    "--notify",
+    "both",
+    "--nvda-waves-dir",
+    "{waves}",
+    "--audio-player",
+    "{player}"
+  ],
+  "waves": {
+    "connected.wav": "52494646636f6e6e",
+    "disconnected.wav": "5249464664697363"
+  },
+  "steps": [
+    {
+      "connect": "speech",
+      "barrier": false
+    },
+    {
+      "settle": true
+    },
+    {
+      "disconnect": "speech"
+    }
+  ]
+}

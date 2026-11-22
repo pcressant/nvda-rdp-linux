@@ -2,11 +2,12 @@
 
 ## Project
 
-This repository experiments with a Linux client compatible with NVDA's Remote Desktop Accessibility (RDAccess) support over RDP/FreeRDP.
+This repository brings NVDA's Remote Desktop Accessibility (RDAccess) support over RDP to Linux, on both sides of the connection:
 
-The long-term goal is to allow a Linux client to use the RDP channels exposed by NVDA/RDAccess to obtain speech and braille locally from a remote Windows session.
+* client: a Linux FreeRDP client uses the RDP channels exposed by NVDA/RDAccess to obtain speech and braille locally from a remote Windows session;
+* server: a Windows NVDA with RDAccess, connected to GNOME Remote Desktop, hears Orca and reads Orca's braille from a remote Linux GNOME session (`docs/server.md`).
 
-Target architecture:
+Client architecture:
 
 ```text
 Remote Windows
@@ -24,28 +25,71 @@ RDAccess protocol/bridge
         |
         +--> Speech Dispatcher
         +--> BRLTTY
+```
+
+Server architecture:
+
+```text
+Windows NVDA + RDAccess, mstsc
         |
-        +--> possible Orca integration
+        | RDP Dynamic Virtual Channels
+        v
+GNOME Remote Desktop + LD_PRELOAD channel library
+        |
+        | framed Unix sockets
+        v
+Speech Dispatcher module / BrlAPI server of the remote session
+        |
+        v
+Orca (unmodified)
 ```
 
 The project is currently experimental.
 
 The client implements the client side of RDAccess 2.0.5
 (`remoteSpeechHandler`, `remoteBrailleHandler`, `_remoteHandler`); `run.md`
-records which features were confirmed in real sessions. The RDAccess 1.x
-(pickle) protocol and direct Orca integration are out of scope.
+records which features were confirmed in real sessions. The server side comes
+from the closed study `draft-nvda-orca-rdp` (commit `faae513`, experiments 01
+to 13); each imported file names its experiment in its header, and
+`docs/server.md` records what was verified there and here. The RDAccess 1.x
+(pickle) protocol is out of scope.
 
 Layout:
 
 * `freerdp-plugin/`: FreeRDP DVC plugin (C), raw transport only;
-* `nvda_rdp_linux/`: Python client (`python -m nvda_rdp_linux`), one process
-  for both channels;
-* `packaging/`: distribution-neutral systemd user unit and Arch PKGBUILD;
-* `flake.nix`: dev shell and Nix packages.
+* `grd-preload/`: channel library preloaded into GNOME Remote Desktop (C),
+  raw transport only, same 32-bit frames as the plugin;
+* `nvda_rdp_linux/common/`: code shared by both sides, without I/O;
+* `nvda_rdp_linux/client/`, `app.py`, `__main__.py`: Python client
+  (`python -m nvda_rdp_linux`), one process for both channels;
+* `nvda_rdp_linux/server/`: BrlAPI server, Speech Dispatcher module, Orca and
+  Mutter D-Bus clients, GLib main loop;
+* `packaging/`: files of the distribution packages (`arch/`, `debian/`,
+  `client/`, `server/`, `systemd/`);
+* `man/`: man pages, French translations in `man/fr/`;
+* `docs/`: server and packaging guides;
+* `nix/`: server package, NixOS module, NixOS system test, and the VM
+  harness of the Arch and Debian builds (`nix/distro-vm/`);
+* `tests/`: `common/`, `client/`, `server/`, `preload/`, `golden/`;
+* `flake.nix`: dev shell, Nix packages, checks and apps.
+
+Four packages are built on every distribution: `nvda-rdp-common`,
+`nvda-rdp-freerdp-plugin`, `nvda-rdp-client`, `nvda-rdp-server`. Arch: only
+the PKGBUILD and `.SRCINFO` are published on the AUR. Debian: `.deb` files for
+forky; Debian 13 is not supported (GNOME 48 cannot host the server). See
+`docs/packaging.md`.
 
 The project is meant to be packaged outside Nix too: keep the plugin building
-against any FreeRDP 3 through its CMake package, keep the client compatible
-with Python 3.13, and keep runtime dependencies to system packages.
+against any FreeRDP 3 through its CMake package, keep the Python code
+compatible with Python 3.13, and keep runtime dependencies to system packages.
+
+Do not change the client's interfaces, which users rely on daily: the
+`nvda-rdp-client` command and `python -m nvda_rdp_linux`, the
+`nvda-rdp-client.service` unit and `~/.config/nvda-rdp-linux/environment`,
+the sockets `$XDG_RUNTIME_DIR/nvda-rdp-linux/{speech,braille}.sock`, the
+command-line options, the plugin name `nvda-rdp-dvc` and file
+`libnvda-rdp-dvc-client.so`, and the flake outputs `overlays.default`,
+`overlays.brltty` and `packages.client`.
 
 ## Environment
 
@@ -99,8 +143,13 @@ Explicitly distinguish between:
 ## Language
 
 Everything in this repository is written in English: code, comments, logs,
-scripts, documentation, and `AGENT.md`. French is only used when talking
-with the user.
+scripts, documentation, and `AGENT.md`. French is used when talking with the
+user.
+
+The one exception: user documentation and man pages also have a French
+translation next to the English reference (`README.fr.md`, `run.fr.md`,
+`docs/*.fr.md`, `man/fr/`). When changing an English document or man page,
+change its translation in the same change.
 
 ## User Accessibility
 
@@ -347,6 +396,19 @@ This order may evolve when justified by technical discoveries, but do not skip s
 ## Tests
 
 Each layer should be independently testable as far as practical.
+
+Test levels:
+
+* `pytest -q`: unit, contract and golden tests of both sides;
+* `nix flake check`: Nix packages and the NixOS system test (two VMs, Linux
+  client against Linux server);
+* `nix run .#build-arch`, `.#test-arch`, `.#build-debian`, `.#test-debian`:
+  package builds and the same system test in VMs of the distributions;
+* real sessions with Windows and NVDA, run by the user only.
+
+Run server programs only in VMs or temporary runtime directories, never in
+the user's session: they would take over Orca's speech and braille. Run D-Bus
+tests on an isolated bus only.
 
 Prefer:
 

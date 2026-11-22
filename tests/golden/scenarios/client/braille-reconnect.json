@@ -1,0 +1,184 @@
+{
+  "description": "A new braille plugin connection negotiates again and keeps the BrlAPI display.",
+  "args": [
+    "--no-speech",
+    "--language",
+    "fr_FR"
+  ],
+  "startup_trace": [
+    {
+      "src": "atspi",
+      "call": "registerEventListener",
+      "args": [
+        "window:deactivate"
+      ]
+    },
+    {
+      "src": "brlapi",
+      "call": "ignoreKeys",
+      "args": [
+        1,
+        [
+          0
+        ]
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "wait_trace": {
+        "src": "brlapi",
+        "call": "ignoreKeys"
+      }
+    },
+    {
+      "connect": "braille"
+    },
+    {
+      "send": "braille",
+      "fixture": "braille-server-protocol-version-v1.hex"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "protocol_version",
+          "version": 2,
+          "channel": "NVDA-BRAILLE"
+        }
+      ]
+    },
+    {
+      "focus": [
+        "window:activate",
+        "xfreerdp",
+        "FreeRDP: windows-remote"
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "display",
+          "cells": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "disconnect": "braille"
+    },
+    {
+      "connect": "braille"
+    },
+    {
+      "send": "braille",
+      "fixture": "braille-server-protocol-version-v1.hex"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "protocol_version",
+          "version": 2,
+          "channel": "NVDA-BRAILLE"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "display",
+          "cells": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "key": {
+        "cmd": "FWINRT"
+      }
+    }
+  ]
+}

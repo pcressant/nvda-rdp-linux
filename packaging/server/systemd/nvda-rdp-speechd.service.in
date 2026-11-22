@@ -1,0 +1,16 @@
+[Unit]
+Description=Speech Dispatcher speaking through the RDP client's NVDA (nvda-rdp)
+Documentation=https://github.com/pcressant/nvda-rdp-linux
+PartOf=graphical-session.target
+Requires=nvda-rdp-server-session.service
+After=nvda-rdp-server-session.service
+Before=orca.service
+ConditionPathExists=%t/nvda-rdp-server/remote
+
+[Service]
+RuntimeDirectory=nvda-rdp-speechd
+ExecStart=@SPEECH_DISPATCHER@ -s -t 0 -C @PKGDATADIR@/speechd -c unix_socket -S %t/nvda-rdp-speechd/speechd.sock -P %t/nvda-rdp-speechd/pid -L %t/nvda-rdp-speechd
+# Orca's client would start a default server on a missing socket
+# (speechd@af73916: src/api/python/speechd/client.py:589-600).
+ExecStartPost=@LIBEXECDIR@/nvda-rdp-server-session wait-socket %t/nvda-rdp-speechd/speechd.sock
+Restart=on-failure

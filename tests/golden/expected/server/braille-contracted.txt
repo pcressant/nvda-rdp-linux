@@ -1,0 +1,39 @@
+# braille-contracted.json: Orca's contraction table from its D-Bus settings maps the characters it writes when contracted braille is enabled; computer braille otherwise; the locale's default table for an empty name.
+startup:
+  trace {"src": "dbus", "call": "ready", "args": [["org.gnome.Mutter.RemoteDesktop", "org.gnome.Orca1.Service"]]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 1: {"accept": "braille"}
+step 2: {"send": "braille", "hex": "11"}
+  braille <- {"hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+step 3: {"send": "braille", "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  braille <- {"json": "{\"attribute\": \"gestureMap\", \"type\": \"attribute_request\"}"}
+  braille <- {"json": "{\"channel\": \"NVDA-BRAILLE\", \"type\": \"protocol_version\", \"version\": 2}"}
+step 4: {"send": "braille", "json": [{"attribute": "numCells", "value": 40, "type": "attribute_value"}]}
+step 5: {"orca": "connect"}
+  orca <- {"action": "connect", "displaySize": [40, 1], "driverName": "RDAccess", "modelIdentifier": "nvda"}
+step 6: {"orca": "enter"}
+  orca <- {"action": "enter"}
+step 7: {"orca": "write", "text": "1@(a"}
+  braille <- {"json": "{\"cells\": [2, 72, 55, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"type\": \"display\"}"}
+  orca <- {"action": "write"}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 8: {"dbus": {"object": "BraillePresenter", "values": {"ContractedBrailleIsEnabled": false}}}
+  trace {"src": "dbus", "call": "changed", "args": ["BraillePresenter", {"ContractedBrailleIsEnabled": false}]}
+step 9: {"sleep": 1.1}
+step 10: {"orca": "write", "text": "1@(a"}
+  braille <- {"json": "{\"cells\": [33, 28, 38, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"type\": \"display\"}"}
+  orca <- {"action": "write"}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 11: {"dbus": {"object": "BraillePresenter", "values": {"ContractedBrailleIsEnabled": true, "ContractionTable": ""}}}
+  trace {"src": "dbus", "call": "changed", "args": ["BraillePresenter", {"ContractedBrailleIsEnabled": true, "ContractionTable": ""}]}
+step 12: {"sleep": 1.1}
+step 13: {"orca": "write", "text": "1@(a"}
+  braille <- {"json": "{\"cells\": [33, 28, 38, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"type\": \"display\"}"}
+  orca <- {"action": "write"}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+shutdown:
+returncode: 0

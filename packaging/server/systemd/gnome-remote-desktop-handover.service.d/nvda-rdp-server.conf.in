@@ -1,0 +1,4 @@
+# Installed by nvda-rdp-server: adds the NVDA-SPEECH and NVDA-BRAILLE
+# channels to GNOME Remote Desktop's session daemon.
+[Service]
+Environment=LD_PRELOAD=@PKGLIBDIR@/libnvda-rdp-grd-preload.so

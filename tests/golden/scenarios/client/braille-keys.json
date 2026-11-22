@@ -1,0 +1,127 @@
+{
+  "description": "Display keys become NVDA brltty gestures while focused; keysyms and keys while idle are not forwarded.",
+  "args": [
+    "--no-speech",
+    "--language",
+    "fr_FR"
+  ],
+  "fake": {
+    "brlapi_driver": "al"
+  },
+  "startup_trace": [
+    {
+      "src": "atspi",
+      "call": "registerEventListener",
+      "args": [
+        "window:deactivate"
+      ]
+    },
+    {
+      "src": "brlapi",
+      "call": "ignoreKeys",
+      "args": [
+        1,
+        [
+          0
+        ]
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "wait_trace": {
+        "src": "brlapi",
+        "call": "ignoreKeys"
+      }
+    },
+    {
+      "connect": "braille"
+    },
+    {
+      "send": "braille",
+      "fixture": "braille-server-protocol-version-v1.hex"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "protocol_version",
+          "version": 2,
+          "channel": "NVDA-BRAILLE"
+        }
+      ]
+    },
+    {
+      "focus": [
+        "window:activate",
+        "xfreerdp",
+        "FreeRDP: windows-remote"
+      ]
+    },
+    {
+      "key": {
+        "cmd": "FWINLT"
+      }
+    },
+    {
+      "key": {
+        "cmd": "FWINRT"
+      }
+    },
+    {
+      "key": {
+        "cmd": "LNUP"
+      }
+    },
+    {
+      "key": {
+        "cmd": "LNDN"
+      }
+    },
+    {
+      "key": {
+        "cmd": "ROUTE",
+        "arg": 5
+      }
+    },
+    {
+      "key": {
+        "cmd": "LEARN"
+      }
+    },
+    {
+      "key": {
+        "passdots": 3
+      }
+    },
+    {
+      "key": {
+        "passdots": 0,
+        "space": true
+      }
+    },
+    {
+      "key": {
+        "passdots": 129,
+        "space": true
+      }
+    },
+    {
+      "key": {
+        "sym": 97
+      }
+    },
+    {
+      "focus": [
+        "window:deactivate",
+        "xfreerdp",
+        "FreeRDP: windows-remote"
+      ]
+    },
+    {
+      "key": {
+        "cmd": "FWINLT"
+      }
+    }
+  ]
+}

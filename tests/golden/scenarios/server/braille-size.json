@@ -1,0 +1,91 @@
+{
+  "description": "Display size: Orca waits while the size is 0, is disconnected when it changes and reconnects with the new size.",
+  "component": "brlapi",
+  "steps": [
+    {
+      "accept": "braille"
+    },
+    {
+      "send": "braille",
+      "hex": "11"
+    },
+    {
+      "send": "braille",
+      "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "orca": "connect"
+    },
+    {
+      "orca": "size"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "numCells",
+          "value": 40,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "size"
+    },
+    {
+      "orca": "enter"
+    },
+    {
+      "orca": "write",
+      "text": "quarante"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "numCells",
+          "value": 40,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "numCells",
+          "value": 20,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "write",
+      "text": "perdu"
+    },
+    {
+      "orca": "connect"
+    },
+    {
+      "orca": "enter"
+    },
+    {
+      "orca": "write",
+      "text": "vingt"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "numCells",
+          "value": 0,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "write",
+      "text": "rien"
+    }
+  ]
+}

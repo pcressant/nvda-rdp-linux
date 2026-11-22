@@ -1,0 +1,33 @@
+{
+  "description": "Connection notifications as NVDA sounds only.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR",
+    "--notify",
+    "sound",
+    "--nvda-waves-dir",
+    "{waves}",
+    "--audio-player",
+    "{player}"
+  ],
+  "waves": {
+    "connected.wav": "52494646636f6e6e",
+    "disconnected.wav": "5249464664697363"
+  },
+  "steps": [
+    {
+      "connect": "speech",
+      "barrier": false
+    },
+    {
+      "settle": true
+    },
+    {
+      "disconnect": "speech"
+    },
+    {
+      "settle": true
+    }
+  ]
+}

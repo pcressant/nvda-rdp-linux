@@ -1,0 +1,44 @@
+{
+  "description": "Without a waves directory, waves are not played; tones still are.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR",
+    "--audio-player",
+    "{player}"
+  ],
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "wave",
+          "fileName": "waves\\error.wav"
+        }
+      ],
+      "settle": true
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "tone",
+          "hz": 440,
+          "length": 20
+        }
+      ],
+      "settle": true
+    }
+  ]
+}

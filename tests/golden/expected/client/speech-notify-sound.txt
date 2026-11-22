@@ -1,0 +1,16 @@
+# speech-notify-sound.json: Connection notifications as NVDA sounds only.
+startup:
+  trace {"src": "ssip", "call": "connect", "args": [["nvda-rdp-linux"], {"autospawn": true, "component": "rdaccess"}]}
+  trace {"src": "ssip", "call": "set_output_module", "args": ["espeak-ng"]}
+  trace {"src": "ssip", "call": "set_language", "args": ["fr-FR"]}
+  trace {"src": "ssip", "call": "set_rate", "args": [50]}
+step 1: {"connect": "speech", "barrier": false}
+step 2: {"settle": true}
+  speech <- {"hex": "11"}
+  trace {"src": "player", "call": "play", "args": [[], 8, "134e30ea8a5b935c968749f597ead9cf8fc19f1f1d55c6f8eb9fbbe458241888"]}
+step 3: {"disconnect": "speech"}
+  trace {"src": "player", "call": "play", "args": [[], 8, "228355d3524ddd08a1c0d24a6686941fdd3dad22c968765cc8d8fd447ff24ee4"]}
+step 4: {"settle": true}
+shutdown:
+  trace {"src": "ssip", "call": "close", "args": []}
+returncode: 0

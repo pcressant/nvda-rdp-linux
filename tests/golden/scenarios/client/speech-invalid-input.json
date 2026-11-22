@@ -1,0 +1,117 @@
+{
+  "description": "Invalid and unsupported input never stops the channel.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR"
+  ],
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "text": "{pas du json}\n"
+    },
+    {
+      "send": "speech",
+      "text": "[1, 2]\n"
+    },
+    {
+      "send": "speech",
+      "text": "{\"type\": \"ping\"}\n"
+    },
+    {
+      "send": "speech",
+      "hex": "ff fe 00 01"
+    },
+    {
+      "send": "speech",
+      "hex": "53 4b 02 00 80 04"
+    },
+    {
+      "send": "speech",
+      "hex": "53 40 03 00 61 62 63"
+    },
+    {
+      "send": "speech",
+      "hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 01"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "protocol_version",
+          "version": 2,
+          "channel": "NVDA-BRAILLE"
+        },
+        {
+          "type": "attribute_value",
+          "value": 1
+        },
+        {
+          "type": "attribute_request",
+          "attribute": 5
+        },
+        {
+          "type": "unknown_message"
+        },
+        {}
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_request",
+          "attribute": "timeSinceInput"
+        },
+        {
+          "type": "attribute_value",
+          "attribute": "timeSinceInput",
+          "value": 12
+        },
+        {
+          "type": "attribute_value",
+          "attribute": "protocolVersion",
+          "value": 2
+        },
+        {
+          "type": "attribute_value",
+          "attribute": "capsLockToggle",
+          "value": "on"
+        },
+        {
+          "type": "attribute_value",
+          "attribute": "somethingElse",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            "toujours là",
+            [
+              "IndexCommand",
+              {
+                "index": 1
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

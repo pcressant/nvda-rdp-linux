@@ -1,0 +1,85 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# From draft-nvda-orca-rdp faae513, experiment 08 (rdaccess.nix, sessionCheck).
+#
+# nvda-rdp-server-session [check [SESSION]]
+#   Decide whether this user's graphical session (or logind session SESSION)
+#   is remote. If it is, write the environment Orca needs to use the nvda-rdp
+#   BrlAPI server and Speech Dispatcher, and the marker the servers' units
+#   check.
+# nvda-rdp-server-session wait-file FILE | wait-socket SOCKET
+#   Wait up to 10 s until FILE is not empty, or SOCKET exists. Used by the
+#   servers' units, so that Orca starts after them.
+set -u
+# Replaced by each package with the directories of the commands it needs.
+# shellcheck disable=SC2123
+PATH=@PATH@
+
+usage() {
+  echo "usage: nvda-rdp-server-session [check [SESSION] | wait-file FILE | wait-socket SOCKET]" >&2
+  exit 2
+}
+
+wait_for() {
+  i=0
+  while [ "$i" -lt 100 ]; do
+    test "$1" "$2" && return 0
+    sleep 0.1
+    i=$((i + 1))
+  done
+  echo "timed out waiting for $2" >&2
+  return 1
+}
+
+check() {
+  state="$XDG_RUNTIME_DIR/nvda-rdp-server"
+  mkdir -p "$state"
+  rm -f "$state/remote" "$state/orca.env" "$XDG_RUNTIME_DIR/nvda-rdp-brlapi.key"
+  session=${1:-$(loginctl show-user "$(id -u)" -p Display --value)}
+  remote=$(loginctl show-session "$session" -p Remote --value 2>/dev/null || true)
+  class=$(loginctl show-session "$session" -p Class --value 2>/dev/null || true)
+  echo "graphical session '$session', Remote=$remote, Class=$class"
+  # User units also run for GDM's greeter users. GNOME Remote Desktop opens
+  # the NVDA channels on a remote login screen as well.
+  case "$class" in
+    user) ;;
+    greeter)
+      if [ "${NVDA_RDP_LOGIN_SCREEN:-yes}" != yes ]; then
+        echo "login screen not served: Orca keeps its usual braille and speech"
+        return 0
+      fi
+      ;;
+    *)
+      echo "not a user session: Orca keeps its usual braille and speech"
+      return 0
+      ;;
+  esac
+  if [ "$remote" != yes ]; then
+    echo "local session: Orca keeps its usual braille and speech"
+    return 0
+  fi
+  cat >"$state/orca.env" <<END
+BRLAPI_HOST=127.0.0.1:$(id -u)
+BRLAPI_AUTH=keyfile:$XDG_RUNTIME_DIR/nvda-rdp-brlapi.key
+SPEECHD_ADDRESS=unix_socket:$XDG_RUNTIME_DIR/nvda-rdp-speechd/speechd.sock
+END
+  touch "$state/remote"
+  echo "remote session: Orca uses the nvda-rdp BrlAPI server and Speech Dispatcher"
+}
+
+case "${1:-check}" in
+  check)
+    [ "$#" -gt 0 ] && shift
+    [ "$#" -le 1 ] || usage
+    check "$@"
+    ;;
+  wait-file)
+    [ "$#" -eq 2 ] || usage
+    wait_for -s "$2"
+    ;;
+  wait-socket)
+    [ "$#" -eq 2 ] || usage
+    wait_for -S "$2"
+    ;;
+  *) usage ;;
+esac

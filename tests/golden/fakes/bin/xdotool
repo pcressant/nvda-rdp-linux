@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+"""Golden fake ``xdotool key Caps_Lock``: toggles the control file ``capslock``."""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import golden_trace
+
+golden_trace.record("xdotool", "run", sys.argv[1:])
+if sys.argv[1:] == ["key", "Caps_Lock"]:
+    path = golden_trace.control_path("capslock")
+    state = path.read_text().strip() if path.exists() else "off"
+    path.write_text("off" if state == "on" else "on")

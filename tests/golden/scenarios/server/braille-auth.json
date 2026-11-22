@@ -1,0 +1,13 @@
+{
+  "description": "BrlAPI authorization: a wrong key is refused; the right key is accepted.",
+  "component": "brlapi",
+  "steps": [
+    {
+      "orca": "raw_auth",
+      "key": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "orca": "connect"
+    }
+  ]
+}

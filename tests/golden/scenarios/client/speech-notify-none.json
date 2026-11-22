@@ -1,0 +1,18 @@
+{
+  "description": "No connection notification.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR",
+    "--notify",
+    "none"
+  ],
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "disconnect": "speech"
+    }
+  ]
+}

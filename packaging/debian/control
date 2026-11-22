@@ -1,0 +1,89 @@
+Source: nvda-rdp-linux
+Section: utils
+Maintainer: Patrick Cressant <patrick.cressant@gmail.com>
+Build-Depends:
+ debhelper-compat (= 14),
+ cmake,
+ dh-python,
+ freerdp3-dev,
+ ninja-build,
+ python3,
+# FreeRDP-Client's CMake package looks for zlib, which freerdp3-dev does not
+# depend on.
+ zlib1g-dev,
+# The tests (DEB_BUILD_OPTIONS=nocheck skips them).
+ dbus-daemon <!nocheck>,
+ gir1.2-atspi-2.0 <!nocheck>,
+ gir1.2-glib-2.0 <!nocheck>,
+ liblouis-data <!nocheck>,
+ pkgconf <!nocheck>,
+ python3-brlapi <!nocheck>,
+ python3-gi <!nocheck>,
+ python3-louis <!nocheck>,
+ python3-pyatspi <!nocheck>,
+ python3-pytest <!nocheck>,
+ python3-speechd <!nocheck>,
+Standards-Version: 4.7.4
+Homepage: https://github.com/pcressant/nvda-rdp-linux
+
+Package: nvda-rdp-common
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}
+Description: NVDA's RDAccess on Linux: code shared by the client and the server
+ RDAccess carries NVDA's speech and braille over RDP. This package holds the
+ Python code shared by nvda-rdp-client and nvda-rdp-server: the framing and
+ the RDAccess protocol.
+
+Package: nvda-rdp-freerdp-plugin
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: NVDA's RDAccess on Linux: FreeRDP plugin of the RDAccess channels
+ A FreeRDP 3 dynamic virtual channel plugin, nvda-rdp-dvc, that passes the
+ NVDA-SPEECH and NVDA-BRAILLE channels to nvda-rdp-client. It works with
+ xfreerdp3 and Remmina.
+
+Package: nvda-rdp-client
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ nvda-rdp-common (= ${source:Version}),
+ nvda-rdp-freerdp-plugin (>= ${source:Version}),
+ at-spi2-core,
+ gir1.2-atspi-2.0,
+ pipewire-bin,
+ python3-brlapi,
+ python3-gi,
+ python3-pyatspi,
+ python3-speechd,
+ speech-dispatcher,
+Recommends: brltty, freerdp3-x11 | remmina
+Suggests: x11-xserver-utils, xdotool
+Description: NVDA's RDAccess on Linux: client for a remote NVDA's speech and braille
+ nvda-rdp-client speaks a remote Windows NVDA through Speech Dispatcher and
+ shows its braille through BRLTTY, from an RDP session with the
+ nvda-rdp-dvc plugin. A systemd user unit keeps it running for the whole
+ graphical session.
+
+Package: nvda-rdp-server
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ ${shlibs:Depends},
+ nvda-rdp-common (= ${source:Version}),
+ gdm3 (>= 49),
+ gir1.2-glib-2.0,
+ gnome-remote-desktop (>= 49),
+ liblouis-data,
+ orca (>= 49),
+ python3-gi,
+ python3-louis,
+ python3-speechd,
+ speech-dispatcher,
+ systemd,
+Description: NVDA's RDAccess on Linux: Orca for NVDA users over GNOME Remote Desktop
+ For an NVDA user connecting with RDP to GDM's remote login of GNOME Remote
+ Desktop: in those sessions, Orca speaks and writes braille through the
+ user's NVDA, by RDAccess. Local sessions keep their usual speech and
+ braille. It needs GNOME 49 or later.

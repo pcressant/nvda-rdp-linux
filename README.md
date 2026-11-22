@@ -1,10 +1,20 @@
 # NVDA RDP Linux
 
-NVDA RDP Linux lets a blind Linux user work in a Windows remote desktop with
-the remote NVDA screen reader, while hearing its speech and reading its braille
-locally. It is the Linux counterpart of the client side of
+NVDA RDP Linux brings
 [RDAccess](https://github.com/LeonarddeR/rdAccess), the NVDA add-on that sends
-speech and braille over RDP dynamic virtual channels.
+speech and braille over RDP dynamic virtual channels, to Linux, on both sides
+of an RDP connection:
+
+* **client**: a blind Linux user works in a Windows remote desktop with the
+  remote NVDA screen reader, and hears its speech and reads its braille
+  locally;
+* **server**: a blind Windows user, with NVDA and RDAccess, works in a GNOME
+  session of a Linux computer reached over RDP, and hears Orca through NVDA's
+  synthesizer and reads Orca's braille on NVDA's display.
+
+The French translation of this page is [README.fr.md](README.fr.md).
+
+## Client
 
 It has two parts:
 
@@ -16,7 +26,7 @@ It has two parts:
 Both `xfreerdp` and Remmina can be used, as long as they use a FreeRDP that
 contains the plugin.
 
-## Features
+### Features
 
 * remote NVDA speech through Speech Dispatcher, with indexes (say all),
   character mode, language switching, pitch/rate/volume changes and pauses;
@@ -33,38 +43,65 @@ contains the plugin.
 The voice and message language follows the locale (`LC_ALL`, `LC_MESSAGES`,
 `LANG`) unless `--language` is given.
 
-## Status
+### Status
 
 Experimental. Real RDP sessions against RDAccess 2.0.4 (NVDA 2026.2) have
 confirmed speech, braille output, braille display keys and routing, NVDA
 sounds, Remmina, and the single client service. Driver settings management,
 Caps Lock synchronization, braille keyboard input and `pause_speech` are
 implemented and unit-tested, but not yet confirmed in a real session.
-RDAccess 1.x and direct Orca integration are not supported.
+RDAccess 1.x is not supported.
 
-## Installation
+### Use
 
-* **Nix / NixOS**: the flake provides the dev shell, the `client` package with
-  its systemd user unit, a FreeRDP variant containing the plugin, and an
-  unmodified Remmina built against it (`remmina-with-nvda-rdp`).
-* **Arch Linux**: `packaging/arch/PKGBUILD` builds `nvda-rdp-linux-git`; it
-  installs the plugin into the system FreeRDP's plugin directory, so the
-  distribution's `xfreerdp` and Remmina find it without changes.
-* **Other distributions**: build the plugin with CMake against the system
-  FreeRDP 3 (it installs into FreeRDP's own plugin directory), install the
-  Python package with a PEP 517 tool, and install
-  `packaging/systemd/nvda-rdp-client.service` as a user unit.
-
-Then enable the client and, in your RDP client, add the dynamic virtual
-channel `nvda-rdp-dvc` (`/dvc:nvda-rdp-dvc` for `xfreerdp`, "Dynamic virtual
+Enable the client and, in your RDP client, add the dynamic virtual channel
+`nvda-rdp-dvc` (`/dvc:nvda-rdp-dvc` for `xfreerdp3`, "Dynamic virtual
 channel" in Remmina's advanced settings):
 
 ```bash
 systemctl --user enable --now nvda-rdp-client.service
 ```
 
-See [run.md](run.md) for architecture, configuration, building, testing,
-packaging and diagnostics.
+See [run.md](run.md) for architecture, configuration, testing and
+diagnostics, and `man nvda-rdp-client`.
+
+## Server
+
+Orca is not modified. A library loaded into an unmodified GNOME Remote
+Desktop presents the two NVDA channels as Unix sockets; in remote sessions
+only, a Speech Dispatcher instance and a BrlAPI server of the session send
+Orca's speech and braille to NVDA, and the display's keys back to Orca. GDM's
+remote login screen is served too. Local sessions keep their usual speech and
+braille, and nothing changes on the Windows side.
+
+It needs GNOME 49 or later (GDM, GNOME Remote Desktop, Orca).
+
+### Status
+
+Experimental. It comes from the study `draft-nvda-orca-rdp`, where, from
+Windows with NVDA, RDAccess and `mstsc`, speech with say all and Orca's voice
+changes, braille output, display keys, braille typing, reconnection and the
+remote login screen were verified on NixOS. In this repository, the system
+tests in VMs of NixOS, Arch Linux and Debian forky check, from Linux to Linux,
+that Orca's speech on the remote login screen reaches the client and that the
+local login screen is unchanged. On NixOS, a manual test from Windows with
+NVDA, RDAccess and `mstsc` passed with this repository's
+`services.nvda-rdp-server` module. The Arch and Debian packages have not been
+tested from Windows yet, nor braille end to end with them.
+
+See [docs/server.md](docs/server.md) and `man nvda-rdp-server`.
+
+## Installation
+
+| | Client | Server |
+| --- | --- | --- |
+| NixOS | `overlays.default`: `nvda-rdp-client`, `freerdp-with-nvda-rdp`, `remmina-with-nvda-rdp` | `nixosModules.server`: `services.nvda-rdp-server.enable` |
+| Arch Linux (AUR) | `nvda-rdp-client-git` | `nvda-rdp-server-git` |
+| Debian forky | `nvda-rdp-common`, `nvda-rdp-freerdp-plugin`, `nvda-rdp-client` | `nvda-rdp-common`, `nvda-rdp-server` |
+
+The AUR has the PKGBUILD only; the Debian packages are `.deb` files of the
+releases. Debian 13 is not supported. Building, testing in VMs, releasing,
+and other distributions: [docs/packaging.md](docs/packaging.md).
 
 ## Credits
 

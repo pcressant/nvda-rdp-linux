@@ -1,0 +1,67 @@
+{
+  "description": "Voice options: English language, Orca rate 70, other output module, no pitch change.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "en_US",
+    "--rate",
+    "70",
+    "--output-module",
+    "voxin",
+    "--pitch-change",
+    "0"
+  ],
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            "hello",
+            [
+              "IndexCommand",
+              {
+                "index": 1
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            [
+              "LangChangeCommand",
+              {
+                "lang": "fr_FR"
+              }
+            ],
+            "bonjour",
+            [
+              "IndexCommand",
+              {
+                "index": 2
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

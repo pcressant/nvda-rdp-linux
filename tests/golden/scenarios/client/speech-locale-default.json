@@ -1,0 +1,39 @@
+{
+  "description": "Without --language, the language comes from the locale.",
+  "args": [
+    "--no-braille"
+  ],
+  "env": {
+    "LANG": "de_DE.UTF-8"
+  },
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            "hallo",
+            [
+              "IndexCommand",
+              {
+                "index": 1
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=Braille display of the RDP client as a BrlAPI display for Orca (nvda-rdp)
+Documentation=https://github.com/pcressant/nvda-rdp-linux
+PartOf=graphical-session.target
+Requires=nvda-rdp-server-session.service
+After=nvda-rdp-server-session.service
+Before=orca.service
+ConditionPathExists=%t/nvda-rdp-server/remote
+
+[Service]
+ExecStart=@LIBEXECDIR@/nvda-rdp-brlapi-server --display %U --key %t/nvda-rdp-brlapi.key
+# Orca reads the key when it connects.
+ExecStartPost=@LIBEXECDIR@/nvda-rdp-server-session wait-file %t/nvda-rdp-brlapi.key
+Restart=on-failure

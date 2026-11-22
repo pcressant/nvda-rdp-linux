@@ -1,0 +1,81 @@
+{
+  "description": "--braille-capture: no BrlAPI, cells only logged, fallback size and no gesture map.",
+  "args": [
+    "--no-speech",
+    "--language",
+    "fr_FR",
+    "--braille-capture",
+    "--cells",
+    "20"
+  ],
+  "steps": [
+    {
+      "connect": "braille"
+    },
+    {
+      "send": "braille",
+      "fixture": "braille-server-protocol-version-v1.hex"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "protocol_version",
+          "version": 2,
+          "channel": "NVDA-BRAILLE"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "attribute_request",
+          "attribute": "numCells"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "numRows"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "numCols"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "fixture": "braille-server-gesture-map-request-v1.hex"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "display",
+          "cells": [
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9
+          ]
+        }
+      ]
+    }
+  ]
+}

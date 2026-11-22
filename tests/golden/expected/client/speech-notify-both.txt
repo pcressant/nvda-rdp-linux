@@ -1,0 +1,19 @@
+# speech-notify-both.json: Connection notifications as message and sound, English locale.
+startup:
+  trace {"src": "ssip", "call": "connect", "args": [["nvda-rdp-linux"], {"autospawn": true, "component": "rdaccess"}]}
+  trace {"src": "ssip", "call": "set_output_module", "args": ["espeak-ng"]}
+  trace {"src": "ssip", "call": "set_language", "args": ["en-US"]}
+  trace {"src": "ssip", "call": "set_rate", "args": [50]}
+step 1: {"connect": "speech", "barrier": false}
+step 2: {"settle": true}
+  speech <- {"hex": "11"}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["Remote speech connected", false, null]}
+  trace {"src": "player", "call": "play", "args": [[], 8, "134e30ea8a5b935c968749f597ead9cf8fc19f1f1d55c6f8eb9fbbe458241888"]}
+step 3: {"disconnect": "speech"}
+  trace {"src": "ssip", "call": "set_spelling", "args": [false]}
+  trace {"src": "ssip", "call": "speak", "args": ["Remote speech disconnected", false, null]}
+  trace {"src": "player", "call": "play", "args": [[], 8, "228355d3524ddd08a1c0d24a6686941fdd3dad22c968765cc8d8fd447ff24ee4"]}
+shutdown:
+  trace {"src": "ssip", "call": "close", "args": []}
+returncode: 0

@@ -1,0 +1,32 @@
+# speech-orca-absent.json: Without Orca's D-Bus service, Orca's defaults are the prosody baseline.
+startup:
+  trace {"src": "dbus", "call": "ready", "args": [["org.gnome.Mutter.RemoteDesktop"]]}
+step 1: {"accept": "speech"}
+step 2: {"send": "speech", "hex": "11"}
+  speech <- {"hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+step 3: {"send": "speech", "hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  speech <- {"json": "{\"attribute\": \"supportedCommands\", \"type\": \"attribute_request\"}"}
+  speech <- {"json": "{\"attribute\": \"language\", \"type\": \"attribute_request\"}"}
+  speech <- {"json": "{\"channel\": \"NVDA-SPEECH\", \"type\": \"protocol_version\", \"version\": 2}"}
+step 4: {"send": "speech", "json": [{"attribute": "supportedCommands", "value": ["BreakCommand", "CharacterModeCommand", "IndexCommand", "LangChangeCommand", "PitchCommand", "RateCommand", "VolumeCommand"], "type": "attribute_value"}, {"attribute": "language", "value": "fr_FR", "type": "attribute_value"}]}
+step 5: {"module": ["INIT"]}
+  module <- {"line": "299-nvda-rdp: speech through NVDA over RDP"}
+  module <- {"line": "299 OK LOADED SUCCESSFULLY"}
+step 6: {"module": ["AUDIO", "audio_output_method=libao", "."]}
+  module <- {"line": "207 OK RECEIVING AUDIO SETTINGS"}
+  module <- {"line": "203 OK AUDIO INITIALIZED"}
+step 7: {"module": ["LOGLEVEL", "log_level=3", "."]}
+  module <- {"line": "207 OK RECEIVING LOGLEVEL SETTINGS"}
+  module <- {"line": "203 OK LOGLEVEL SET"}
+step 8: {"module": ["SET", "rate=50", "pitch=20", "."]}
+  module <- {"line": "203 OK RECEIVING SETTINGS"}
+  module <- {"line": "203 OK SETTINGS RECEIVED"}
+step 9: {"module": ["SPEAK", "<speak>défaut</speak>", "."]}
+  speech <- {"json": "{\"sequence\": [[\"IndexCommand\", {\"index\": 1}], [\"RateCommand\", {\"_multiplier\": 1, \"_offset\": 25, \"isDefault\": false}], [\"PitchCommand\", {\"_multiplier\": 1, \"_offset\": 10, \"isDefault\": false}], \"défaut\", [\"RateCommand\", {\"_multiplier\": 1, \"_offset\": 0, \"isDefault\": true}], [\"PitchCommand\", {\"_multiplier\": 1, \"_offset\": 0, \"isDefault\": true}], [\"IndexCommand\", {\"index\": 2}]], \"type\": \"speak\"}"}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+step 10: {"send": "speech", "json": [{"index": 1, "type": "index"}, {"index": 2, "type": "index"}]}
+  module <- {"line": "701 BEGIN"}
+  module <- {"line": "702 END"}
+shutdown:
+returncode: 0

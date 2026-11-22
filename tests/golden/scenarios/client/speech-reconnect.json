@@ -1,0 +1,74 @@
+{
+  "description": "Disconnection with buffered partial data, then a new plugin connection negotiates again.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR"
+  ],
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            "premier",
+            [
+              "IndexCommand",
+              {
+                "index": 1
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "text": "{\"type\": \"speak\", \"seq",
+      "barrier": false
+    },
+    {
+      "disconnect": "speech"
+    },
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            "second",
+            [
+              "IndexCommand",
+              {
+                "index": 2
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

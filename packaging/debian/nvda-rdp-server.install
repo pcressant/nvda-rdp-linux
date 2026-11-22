@@ -1,0 +1,2 @@
+nvda_rdp_linux/server/*.py usr/lib/python3/dist-packages/nvda_rdp_linux/server/
+man/fr/nvda-rdp-server.7 usr/share/man/fr/man7/

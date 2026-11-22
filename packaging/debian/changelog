@@ -1,0 +1,6 @@
+nvda-rdp-linux (0.2.0) unstable; urgency=medium
+
+  * Split into nvda-rdp-common, nvda-rdp-freerdp-plugin, nvda-rdp-client
+    and nvda-rdp-server.
+
+ -- Patrick Cressant <patrick.cressant@gmail.com>  Sun, 22 Nov 2026 12:00:00 +0100

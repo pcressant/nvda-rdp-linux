@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Golden fake audio player: records the size and SHA-256 of the WAV on stdin."""
+
+import hashlib
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import golden_trace
+
+data = sys.stdin.buffer.read()
+golden_trace.record("player", "play", sys.argv[1:], len(data), hashlib.sha256(data).hexdigest())

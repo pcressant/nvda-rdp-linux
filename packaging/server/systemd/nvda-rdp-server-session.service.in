@@ -1,0 +1,12 @@
+[Unit]
+Description=Decide whether this graphical session is remote (nvda-rdp server)
+Documentation=https://github.com/pcressant/nvda-rdp-linux
+PartOf=graphical-session.target
+Before=orca.service nvda-rdp-brlapi.service nvda-rdp-speechd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Set to no in a drop-in to leave a remote login screen with its usual speech.
+Environment=NVDA_RDP_LOGIN_SCREEN=yes
+ExecStart=@LIBEXECDIR@/nvda-rdp-server-session check

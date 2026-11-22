@@ -22,6 +22,16 @@ include = ["nvda_rdp_linux*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = [
+  # Raised by PyGObject's own GLib overrides, whenever GLib is imported.
+  "ignore:GLib.unix_signal_add_full is deprecated:DeprecationWarning",
+  # PyGObject's asyncio integration, imported with GLib on Python 3.14.
+  "ignore::DeprecationWarning:gi.events",
+]
+markers = [
+  "golden: black-box transcripts of the client and server processes (tests/golden)",
+]
 
 [tool.ruff]
 target-version = "py313"

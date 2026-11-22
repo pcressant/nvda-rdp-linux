@@ -1,0 +1,33 @@
+{
+  "description": "Caps Lock synchronization is disabled without an X11 display.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR",
+    "--sync-caps-lock"
+  ],
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_value",
+          "attribute": "capsLockToggle",
+          "value": true
+        }
+      ],
+      "settle": true
+    }
+  ]
+}

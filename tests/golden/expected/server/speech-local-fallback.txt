@@ -1,0 +1,75 @@
+# speech-local-fallback.json: Speech module without NVDA attached: messages go to the session's usual Speech Dispatcher.
+startup:
+  trace {"src": "dbus", "call": "ready", "args": [["org.gnome.Mutter.RemoteDesktop", "org.gnome.Orca1.Service"]]}
+step 1: {"module": ["INIT"]}
+  module <- {"line": "299-nvda-rdp: speech through NVDA over RDP"}
+  module <- {"line": "299 OK LOADED SUCCESSFULLY"}
+step 2: {"module": ["AUDIO", "audio_output_method=libao", "."]}
+  module <- {"line": "207 OK RECEIVING AUDIO SETTINGS"}
+  module <- {"line": "203 OK AUDIO INITIALIZED"}
+step 3: {"module": ["LOGLEVEL", "log_level=3", "."]}
+  module <- {"line": "207 OK RECEIVING LOGLEVEL SETTINGS"}
+  module <- {"line": "203 OK LOGLEVEL SET"}
+step 4: {"module": ["SET", "rate=0", "pitch=0", "pitch_range=0", "volume=0", "punctuation_mode=some", "spelling_mode=off", "cap_let_recogn=none", "language=fr-FR", "synthesis_voice=NULL", "."]}
+  module <- {"line": "203 OK RECEIVING SETTINGS"}
+  module <- {"line": "203 OK SETTINGS RECEIVED"}
+step 5: {"module": ["SPEAK", "<speak>Bonjour <mark name=\"m1\"/>monde</speak>", "."]}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+  module <- {"line": "701 BEGIN"}
+  module <- {"line": "702 END"}
+  trace {"src": "ssip", "call": "connect", "args": [["nvda-rdp"], {"component": "fallback"}]}
+  trace {"src": "ssip", "call": "set_data_mode", "args": ["ssml"]}
+  trace {"src": "ssip", "call": "set_rate", "args": [0]}
+  trace {"src": "ssip", "call": "set_pitch", "args": [0]}
+  trace {"src": "ssip", "call": "set_pitch_range", "args": [0]}
+  trace {"src": "ssip", "call": "set_volume", "args": [0]}
+  trace {"src": "ssip", "call": "set_punctuation", "args": ["some"]}
+  trace {"src": "ssip", "call": "set_language", "args": ["fr-FR"]}
+  trace {"src": "ssip", "call": "speak", "args": ["<speak>Bonjour <mark name=\"m1\"/>monde</speak>", true, ["begin", "end", "cancel", "index_marks"]]}
+step 6: {"module": ["LIST VOICES"]}
+  module <- {"line": "200-NVDA\tfr\tnone"}
+  module <- {"line": "200 OK VOICE LIST SENT"}
+step 7: {"module": ["CHAR", "a", "."]}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+  module <- {"line": "701 BEGIN"}
+  module <- {"line": "702 END"}
+  trace {"src": "ssip", "call": "char", "args": ["a"]}
+step 8: {"module": ["KEY", "space", "."]}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+  module <- {"line": "701 BEGIN"}
+  module <- {"line": "702 END"}
+  trace {"src": "ssip", "call": "key", "args": [" "]}
+step 9: {"module": ["SOUND_ICON", "bell", "."]}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+  module <- {"line": "701 BEGIN"}
+  module <- {"line": "702 END"}
+step 10: {"module": ["SPEAK", "", "."]}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "301 ERROR CANT SPEAK"}
+step 11: {"module": ["SET", "rate=40", "pitch=-20", "volume=50", "language=en-US", "synthesis_voice=NULL", "."]}
+  module <- {"line": "203 OK RECEIVING SETTINGS"}
+  module <- {"line": "203 OK SETTINGS RECEIVED"}
+step 12: {"module": ["SPEAK", "<speak>hello</speak>", "."]}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+  module <- {"line": "701 BEGIN"}
+  module <- {"line": "702 END"}
+  trace {"src": "ssip", "call": "set_rate", "args": [40]}
+  trace {"src": "ssip", "call": "set_pitch", "args": [-20]}
+  trace {"src": "ssip", "call": "set_volume", "args": [50]}
+  trace {"src": "ssip", "call": "set_language", "args": ["en-US"]}
+  trace {"src": "ssip", "call": "speak", "args": ["<speak>hello</speak>", true, ["begin", "end", "cancel", "index_marks"]]}
+step 13: {"module": ["STOP"]}
+step 14: {"module": ["BOGUS"]}
+  module <- {"line": "300 ERR UNKNOWN COMMAND"}
+step 15: {"module": ["DEBUG ON /tmp"]}
+  module <- {"line": "200 OK DEBUGGING"}
+step 16: {"module": ["QUIT"]}
+  module <- {"line": "210 OK QUIT"}
+  trace {"src": "ssip", "call": "close", "args": []}
+shutdown:
+returncode: 0

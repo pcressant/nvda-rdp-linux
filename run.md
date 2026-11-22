@@ -1,7 +1,11 @@
-# NVDA RDP Linux: Technical Guide
+# NVDA RDP Linux: Client Guide
 
-This guide explains the architecture, and how to build, test, package, use and
-diagnose the project.
+This guide explains the client's architecture, and how to build, test, use
+and diagnose it. The server side, Orca over GNOME Remote Desktop for an NVDA
+user on Windows, has its own guide, [docs/server.md](docs/server.md);
+packaging and the tests in VMs are in [docs/packaging.md](docs/packaging.md).
+The French translation of this guide is [run.fr.md](run.fr.md); the reference
+page of the command is `nvda-rdp-client(1)`.
 
 The client implements the client side of RDAccess 2.0.5 (released
 2026-10-15). Validation history:
@@ -16,7 +20,7 @@ The client implements the client side of RDAccess 2.0.5 (released
 
 ## Overview
 
-The project is split into two parts:
+The client is split into two parts:
 
 ```text
 Windows NVDA/RDAccess
@@ -36,9 +40,9 @@ Python client (one process, one thread per channel)
         +--> BrlAPI --> BRLTTY (cells out, display keys back to NVDA)
 ```
 
-The C plugin handles FreeRDP, the DVCs, and IPC transport. The Python client process listens on one socket per DVC, reconstructs JSON Lines messages, implement the client side of RDAccess, and communicate with Speech Dispatcher, PipeWire and BRLTTY.
+The C plugin handles FreeRDP, the DVCs, and IPC transport. The Python client process listens on one socket per DVC, reconstructs JSON Lines messages, implements the client side of RDAccess, and communicates with Speech Dispatcher, PipeWire and BRLTTY.
 
-The plugin contains no RDAccess logic and generates no application-level bytes. It transports payloads in both directions and produces diagnostic dumps. The Python client sends XON on each connection, then handle the `protocolVersion=2` handshake and channel-specific responses.
+The plugin contains no RDAccess logic and generates no application-level bytes. It transports payloads in both directions and produces diagnostic dumps. The Python client sends XON on each connection, then handles the `protocolVersion=2` handshake and channel-specific responses.
 
 Main files:
 
@@ -47,22 +51,35 @@ Main files:
 * `freerdp-plugin/CMakeLists.txt`: FreeRDP module build configuration;
 * `nvda_rdp_linux/app.py`: client entry point (`python -m nvda_rdp_linux`), running both
   channels in one process and containing channel failures;
-* `nvda_rdp_linux/rdaccess/ipc.py`: Unix socket and 32-bit framing;
-* `nvda_rdp_linux/rdaccess/framing.py`: IPC frame reconstruction;
-* `nvda_rdp_linux/rdaccess/session.py`: shared handshake, legacy/JSON stream parsing,
-  generic attributes (`supportedSettings`, versions, `capsLockToggle`);
-* `nvda_rdp_linux/rdaccess/protocol.py`: `NVDA-SPEECH` messages and speech sequence
+* `nvda_rdp_linux/common/`: code shared with the server side, without I/O:
+  * `framing.py`: IPC frame reconstruction (32-bit length);
+  * `rdaccess.py`: RDAccess v2 wire format (legacy attribute frames, JSON Lines, stream
+    decoding);
+  * `speech.py`: `NVDA-SPEECH` vocabulary and prosody commands;
+  * `braille.py`: `NVDA-BRAILLE` vocabulary, cells and gestures;
+  * `settings.py`: JSON encoding of NVDA driver settings;
+* `nvda_rdp_linux/client/ipc.py`: Unix socket of the FreeRDP plugin;
+* `nvda_rdp_linux/client/session.py`: client handshake and generic attributes
+  (`supportedSettings`, versions, `capsLockToggle`);
+* `nvda_rdp_linux/client/protocol.py`: `NVDA-SPEECH` messages and speech sequence
   rendering (indexes, character mode, language, prosody, breaks);
-* `nvda_rdp_linux/rdaccess/speech.py`: persistent Speech Dispatcher connection and
+* `nvda_rdp_linux/client/speech.py`: persistent Speech Dispatcher connection and
   voice settings;
-* `nvda_rdp_linux/rdaccess/settings.py`: JSON encoding of NVDA driver settings;
-* `nvda_rdp_linux/rdaccess/audio.py`: NVDA tones and wave files through `pw-play`;
-* `nvda_rdp_linux/rdaccess/braille.py`: `NVDA-BRAILLE` messages and gestures;
-* `nvda_rdp_linux/rdaccess/brltty.py`: BrlAPI output, key input and AT-SPI focus;
-* `nvda_rdp_linux/rdaccess/capslock.py`: optional Caps Lock synchronization;
-* `nvda_rdp_linux/rdaccess/notify.py`: connection notifications;
-* `tests/`: unit tests and fixtures captured from real exchanges;
+* `nvda_rdp_linux/client/audio.py`: NVDA tones and wave files through `pw-play`;
+* `nvda_rdp_linux/client/braille.py`: `NVDA-BRAILLE` messages and gestures;
+* `nvda_rdp_linux/client/brltty.py`: BrlAPI output, key input and AT-SPI focus;
+* `nvda_rdp_linux/client/capslock.py`: optional Caps Lock synchronization;
+* `nvda_rdp_linux/client/notify.py`: connection notifications;
+* `tests/common/`, `tests/client/`: unit tests; `tests/fixtures/`: fixtures captured from
+  real exchanges; `tests/golden/`: black-box non-regression transcripts;
 * `scripts/run-rdaccess-speech-session`: recommended complete launcher;
+* `man/`: man pages, with their French translations in `man/fr/`;
+* `packaging/`: files of the distribution packages (see
+  [docs/packaging.md](docs/packaging.md)).
+
+The server side lives in `grd-preload/`, `nvda_rdp_linux/server/`,
+`packaging/server/`, `nix/server.nix`, `nix/modules/` and `tests/server/`; see
+[docs/server.md](docs/server.md).
 
 ## Entering the Development Environment
 
@@ -109,12 +126,17 @@ Inside `nix develop`:
 
 ```bash
 pytest -q
-ruff check nvda_rdp_linux tests
-ruff format --check nvda_rdp_linux tests
-clang-format --dry-run --Werror freerdp-plugin/nvda_rdp_dvc.c
+ruff check nvda_rdp_linux tests nix/distro-vm
+ruff format --check nvda_rdp_linux tests nix/distro-vm
+clang-format --dry-run --Werror freerdp-plugin/nvda_rdp_dvc.c grd-preload/nvda_rdp_grd_preload.c
 ```
 
-Run the complete flake check from the repository root:
+`pytest` runs the client, common and server tests. The golden tests replay
+black-box scenarios against the client and server processes and compare
+their output with recorded transcripts (`tests/golden/README.md`).
+
+Run the complete flake check, which also runs the NixOS system test in VMs
+(KVM), from the repository root:
 
 ```bash
 nix flake check
@@ -239,43 +261,34 @@ Both channels run in one process, so a failure on one must not stop the other:
 
 `--no-speech` or `--no-braille` disable a channel entirely.
 
-## Packaging for Other Distributions
+## Distribution Packages
 
-The plugin and the client are independent of Nix:
+Arch Linux and Debian have four packages: `nvda-rdp-common`,
+`nvda-rdp-freerdp-plugin`, `nvda-rdp-client` and `nvda-rdp-server` (`-git`
+on Arch). The client needs the first three:
 
-* **plugin**: `cmake -S freerdp-plugin -B build -DCMAKE_INSTALL_PREFIX=/usr`
-  builds against the system FreeRDP 3 and installs
-  `libnvda-rdp-dvc-client.so` into the plugin directory exported by FreeRDP's
-  CMake package (`FreeRDP_RELATIVE_PLUGIN_DIR`, e.g. `lib/freerdp3`). It must
-  be rebuilt when the system FreeRDP is upgraded to a new 3.x release.
-  `-DNVDA_RDP_PLUGIN_DIR=...` overrides the directory;
-* **client**: `pyproject.toml` builds the `nvda_rdp_linux` package and the
-  `nvda-rdp-client` command (Python 3.13 or later). Its runtime dependencies
-  come from system packages: the `speechd` module (Speech Dispatcher), the
-  `brlapi` module (BRLTTY), `pyatspi` with the AT-SPI typelib, PyGObject, and
-  `pw-play` (PipeWire);
-* **service**: `packaging/systemd/nvda-rdp-client.service` is installed as
-  `/usr/lib/systemd/user/nvda-rdp-client.service`; the flake generates the
-  same unit with the Nix launcher path. Users enable it themselves.
+* Arch Linux: `nvda-rdp-client-git` from the AUR, built from
+  `packaging/arch/PKGBUILD`; it replaces the former single package
+  `nvda-rdp-linux-git`. The Python BrlAPI module is in `python-brltty` and
+  `pw-play` in `pipewire-audio`;
+* Debian forky (testing), amd64: the `.deb` files of a release:
 
-### Arch Linux (AUR)
+  ```bash
+  sudo apt install ./nvda-rdp-common_*.deb ./nvda-rdp-freerdp-plugin_*.deb \
+    ./nvda-rdp-client_*.deb
+  ```
 
-`packaging/arch/PKGBUILD` builds `nvda-rdp-linux-git` from the Git
-repository, and `packaging/arch/.SRCINFO` is the matching AUR metadata
-(regenerate it with `makepkg --printsrcinfo > .SRCINFO` after editing the
-PKGBUILD). On Arch, the Python BrlAPI module is in `python-brltty` and
-`pw-play` in `pipewire-audio`.
+The plugin is installed into the system FreeRDP's plugin directory, so the
+distribution's `xfreerdp3` and Remmina find it without changes. It is built
+against one FreeRDP 3 release and must be rebuilt when the distribution
+upgrades FreeRDP. Each user then enables the service:
 
-It was tested on 2026-10-21 in an Arch Linux root (official bootstrap image,
-FreeRDP 3.32.2, Python 3.14.8, run unprivileged with bubblewrap): `makepkg`
-built the package and ran the test suite, `namcap` reported only expected
-warnings (runtime dependencies it cannot detect, and the Python entry-point
-script), the installed client handled the real braille captures, and Arch's
-FreeRDP resolved `nvda-rdp-dvc` to `/usr/lib/freerdp3/`. It has not been run on
-an installed Arch system with a real RDP session.
+```bash
+systemctl --user enable --now nvda-rdp-client.service
+```
 
-The package builds the default branch of the GitHub repository, so changes
-must be pushed there before the AUR package can pick them up.
+How the packages are built, tested in VMs and released, and how to install
+on other distributions: [docs/packaging.md](docs/packaging.md).
 
 ## Using Remmina
 
@@ -287,10 +300,12 @@ contains the plugin; the flake provides it:
 nix run .#remmina-with-nvda-rdp
 ```
 
-or install it with `nix profile install .#remmina-with-nvda-rdp`. On another
-distribution, installing `libnvda-rdp-dvc-client.so` into the plugin directory
-of the system FreeRDP (for example `/usr/lib/x86_64-linux-gnu/freerdp3/`),
-built against the same FreeRDP version, would have the same effect.
+or install it with `nix profile install .#remmina-with-nvda-rdp`. On Arch and
+Debian, the plugin package installs `libnvda-rdp-dvc-client.so` into the
+plugin directory of the system FreeRDP (`/usr/lib/freerdp3/`,
+`/usr/lib/x86_64-linux-gnu/freerdp3/`), which the distribution's Remmina uses
+as well. The VM tests check this with `xfreerdp3`; the distributions' Remmina
+has not been tested yet.
 
 In the RDP connection profile, Advanced tab, set "Dynamic virtual channel" to:
 
@@ -564,16 +579,20 @@ nix develop --command xfreerdp /list:kbd
 To experiment without mixing responsibilities:
 
 * DVC transport or socket connection: `freerdp-plugin/nvda_rdp_dvc.c`;
-* IPC framing: `nvda_rdp_linux/rdaccess/framing.py` and `nvda_rdp_linux/rdaccess/ipc.py`;
-* handshake and generic attributes: `nvda_rdp_linux/rdaccess/session.py`;
-* new speech messages or commands: `nvda_rdp_linux/rdaccess/protocol.py`;
-* braille messages and gestures: `nvda_rdp_linux/rdaccess/braille.py`;
-* braille display keys: `nvda_rdp_linux/rdaccess/brltty.py`;
-* tones and sounds: `nvda_rdp_linux/rdaccess/audio.py`;
-* Speech Dispatcher rendering: `nvda_rdp_linux/rdaccess/speech.py`;
+* IPC framing: `nvda_rdp_linux/common/framing.py` and `nvda_rdp_linux/client/ipc.py`;
+* wire format shared with the server: `nvda_rdp_linux/common/`;
+* handshake and generic attributes: `nvda_rdp_linux/client/session.py`;
+* new speech messages or commands: `nvda_rdp_linux/common/speech.py` and
+  `nvda_rdp_linux/client/protocol.py`;
+* braille messages and gestures: `nvda_rdp_linux/common/braille.py` and
+  `nvda_rdp_linux/client/braille.py`;
+* braille display keys: `nvda_rdp_linux/client/brltty.py`;
+* tones and sounds: `nvda_rdp_linux/client/audio.py`;
+* Speech Dispatcher rendering: `nvda_rdp_linux/client/speech.py`;
 * client options and channel startup: `nvda_rdp_linux/app.py`;
 * FreeRDP options: `scripts/run-rdaccess-speech-session`;
-* reproducible cases: add a fixture first, then a test under `tests/`.
+* reproducible cases: add a fixture first, then a test under `tests/client/` or
+  `tests/common/`, and a golden scenario for behaviour seen from outside.
 
 After making a change, proceed in this order:
 
@@ -599,7 +618,8 @@ compare the FreeRDP and client logs
   owns the braille display;
 * no RDAccess 1.x compatibility (its legacy payloads are pickled and are
   deliberately never decoded);
-* no direct Orca integration.
+* the client does not integrate with the local Orca: the remote braille takes
+  the display while the RDP window has the focus, then gives it back.
 
 ## Assisted Testing Rule
 

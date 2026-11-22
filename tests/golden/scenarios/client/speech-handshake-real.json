@@ -1,0 +1,14 @@
+{
+  "description": "Real RDAccess 2.0.0 speech negotiation captures: legacy protocolVersion, then JSON protocol_version, version replies and first speak.",
+  "args": ["--no-braille", "--language", "fr_FR"],
+  "steps": [
+    {"connect": "speech"},
+    {"send": "speech", "fixture": "server-protocol-version-v1.hex"},
+    {"send": "speech", "fixture": "server-protocol-version-v2-jsonl.hex"},
+    {"send": "speech", "json": [{"type": "attribute_value", "attribute": "rdAccessVersion", "value": "2.0.5"}, {"type": "attribute_value", "attribute": "nvdaVersion", "value": "2026.2"}]},
+    {"send": "speech", "fixture": "server-language-request-v1.hex"},
+    {"send": "speech", "fixture": "server-language-request-v2-jsonl.hex"},
+    {"send": "speech", "fixture": "server-supported-commands-v2-jsonl.hex"},
+    {"send": "speech", "fixture": "first-speak-v2-jsonl.hex"}
+  ]
+}

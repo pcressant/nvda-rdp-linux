@@ -1,0 +1,64 @@
+# braille-keys.json: Display keys become NVDA brltty gestures while focused; keysyms and keys while idle are not forwarded.
+startup:
+  trace {"src": "atspi", "call": "registerEventListener", "args": ["window:activate"]}
+  trace {"src": "atspi", "call": "registerEventListener", "args": ["window:deactivate"]}
+  trace {"src": "brlapi", "call": "connect", "args": []}
+  trace {"src": "brlapi", "call": "enterTtyModeWithPath", "args": []}
+  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 0]}
+  trace {"src": "brlapi", "call": "ignoreKeys", "args": [1, [0]]}
+step 1: {"wait_trace": {"src": "brlapi", "call": "ignoreKeys"}}
+step 2: {"connect": "braille"}
+  braille <- {"hex": "11"}
+  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+step 3: {"send": "braille", "fixture": "braille-server-protocol-version-v1.hex"}
+  braille <- {"hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  braille <- {"text": "{\"attribute\": \"rdAccessVersion\", \"type\": \"attribute_request\"}\n"}
+  braille <- {"text": "{\"attribute\": \"nvdaVersion\", \"type\": \"attribute_request\"}\n"}
+  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+step 4: {"send": "braille", "json": [{"type": "protocol_version", "version": 2, "channel": "NVDA-BRAILLE"}]}
+  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+step 5: {"focus": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
+  trace {"src": "atspi", "call": "event", "args": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
+  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 60]}
+step 6: {"key": {"cmd": "FWINLT"}}
+  braille <- {"text": "{\"source\": \"brltty\", \"id\": \"fwinlt\", \"routingIndex\": null, \"model\": \"al\", \"type\": \"braille_input\"}\n"}
+  trace {"src": "brlapi", "call": "readKey", "args": [536870935]}
+step 7: {"key": {"cmd": "FWINRT"}}
+  braille <- {"text": "{\"source\": \"brltty\", \"id\": \"fwinrt\", \"routingIndex\": null, \"model\": \"al\", \"type\": \"braille_input\"}\n"}
+  trace {"src": "brlapi", "call": "readKey", "args": [536870936]}
+step 8: {"key": {"cmd": "LNUP"}}
+  braille <- {"text": "{\"source\": \"brltty\", \"id\": \"lnup\", \"routingIndex\": null, \"model\": \"al\", \"type\": \"braille_input\"}\n"}
+  trace {"src": "brlapi", "call": "readKey", "args": [536870913]}
+step 9: {"key": {"cmd": "LNDN"}}
+  braille <- {"text": "{\"source\": \"brltty\", \"id\": \"lndn\", \"routingIndex\": null, \"model\": \"al\", \"type\": \"braille_input\"}\n"}
+  trace {"src": "brlapi", "call": "readKey", "args": [536870914]}
+step 10: {"key": {"cmd": "ROUTE", "arg": 5}}
+  braille <- {"text": "{\"source\": \"brltty\", \"id\": \"route\", \"routingIndex\": 5, \"model\": \"al\", \"type\": \"braille_input\"}\n"}
+  trace {"src": "brlapi", "call": "readKey", "args": [536936453]}
+step 11: {"key": {"cmd": "LEARN"}}
+  braille <- {"text": "{\"source\": \"brltty\", \"id\": \"learn\", \"routingIndex\": null, \"model\": \"al\", \"type\": \"braille_input\"}\n"}
+  trace {"src": "brlapi", "call": "readKey", "args": [536870963]}
+step 12: {"key": {"passdots": 3}}
+  braille <- {"text": "{\"source\": \"brltty\", \"id\": \"passdots\", \"routingIndex\": null, \"model\": \"al\", \"dots\": 3, \"space\": false, \"type\": \"braille_input\"}\n"}
+  trace {"src": "brlapi", "call": "readKey", "args": [539099139]}
+step 13: {"key": {"passdots": 0, "space": true}}
+  braille <- {"text": "{\"source\": \"brltty\", \"id\": \"passdots\", \"routingIndex\": null, \"model\": \"al\", \"dots\": 0, \"space\": true, \"type\": \"braille_input\"}\n"}
+  trace {"src": "brlapi", "call": "readKey", "args": [539099392]}
+step 14: {"key": {"passdots": 129, "space": true}}
+  braille <- {"text": "{\"source\": \"brltty\", \"id\": \"passdots\", \"routingIndex\": null, \"model\": \"al\", \"dots\": 129, \"space\": true, \"type\": \"braille_input\"}\n"}
+  trace {"src": "brlapi", "call": "readKey", "args": [539099521]}
+step 15: {"key": {"sym": 97}}
+  trace {"src": "brlapi", "call": "readKey", "args": [97]}
+step 16: {"focus": ["window:deactivate", "xfreerdp", "FreeRDP: windows-remote"]}
+  trace {"src": "atspi", "call": "event", "args": ["window:deactivate", "xfreerdp", "FreeRDP: windows-remote"]}
+  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 0]}
+step 17: {"key": {"cmd": "FWINLT"}}
+  trace {"src": "brlapi", "call": "readKey", "args": [536870935]}
+shutdown:
+  trace {"src": "atspi", "call": "deregisterEventListener", "args": ["window:activate"]}
+  trace {"src": "atspi", "call": "deregisterEventListener", "args": ["window:deactivate"]}
+  trace {"src": "atspi", "call": "stop", "args": []}
+  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 0]}
+  trace {"src": "brlapi", "call": "leaveTtyMode", "args": []}
+  trace {"src": "brlapi", "call": "closeConnection", "args": []}
+returncode: 0

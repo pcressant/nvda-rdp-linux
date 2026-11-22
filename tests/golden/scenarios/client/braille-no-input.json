@@ -1,0 +1,114 @@
+{
+  "description": "--no-braille-input: no gesture map is advertised and keys are not read.",
+  "args": [
+    "--no-speech",
+    "--language",
+    "fr_FR",
+    "--no-braille-input"
+  ],
+  "startup_trace": [
+    {
+      "src": "atspi",
+      "call": "registerEventListener",
+      "args": [
+        "window:deactivate"
+      ]
+    },
+    {
+      "src": "brlapi",
+      "call": "setParameter",
+      "args": [
+        1,
+        0,
+        false,
+        0
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "wait_trace": {
+        "src": "brlapi",
+        "call": "setParameter"
+      }
+    },
+    {
+      "connect": "braille"
+    },
+    {
+      "send": "braille",
+      "fixture": "braille-server-protocol-version-v1.hex"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "protocol_version",
+          "version": 2,
+          "channel": "NVDA-BRAILLE"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "fixture": "braille-server-gesture-map-request-v1.hex"
+    },
+    {
+      "focus": [
+        "window:activate",
+        "xfreerdp",
+        "FreeRDP: windows-remote"
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "type": "display",
+          "cells": [
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7
+          ]
+        }
+      ]
+    }
+  ]
+}

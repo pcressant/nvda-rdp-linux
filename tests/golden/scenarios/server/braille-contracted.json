@@ -1,0 +1,74 @@
+{
+  "description": "Orca's contraction table from its D-Bus settings maps the characters it writes when contracted braille is enabled; computer braille otherwise; the locale's default table for an empty name.",
+  "component": "brlapi",
+  "fake": {
+    "orca_braille": {
+      "ContractedBrailleIsEnabled": true,
+      "ContractionTable": "en-us-g2"
+    }
+  },
+  "steps": [
+    {
+      "accept": "braille"
+    },
+    {
+      "send": "braille",
+      "hex": "11"
+    },
+    {
+      "send": "braille",
+      "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "numCells",
+          "value": 40,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "connect"
+    },
+    {
+      "orca": "enter"
+    },
+    {
+      "orca": "write",
+      "text": "1@(a"
+    },
+    {
+      "dbus": {
+        "object": "BraillePresenter",
+        "values": {
+          "ContractedBrailleIsEnabled": false
+        }
+      }
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "orca": "write",
+      "text": "1@(a"
+    },
+    {
+      "dbus": {
+        "object": "BraillePresenter",
+        "values": {
+          "ContractedBrailleIsEnabled": true,
+          "ContractionTable": ""
+        }
+      }
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "orca": "write",
+      "text": "1@(a"
+    }
+  ]
+}

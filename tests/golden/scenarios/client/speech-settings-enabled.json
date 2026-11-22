@@ -1,0 +1,167 @@
+{
+  "description": "Driver settings management: the remote NVDA reads and changes the local voice, rate, pitch and volume.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR",
+    "--settings-management"
+  ],
+  "fake": {
+    "ssip_voices": [
+      [
+        "fr-voice",
+        "fr-FR",
+        "none"
+      ],
+      [
+        "en-voice",
+        "en-US",
+        ""
+      ],
+      [
+        "mbrola",
+        null,
+        null
+      ]
+    ]
+  },
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_request",
+          "attribute": "supportedSettings"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "_availableLanguages"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_request",
+          "attribute": "setting_rate"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "setting_pitch"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "setting_volume"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "setting_voice"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "availableVoices"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "setting_unknown"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "availableThings"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_value",
+          "attribute": "setting_rate",
+          "value": 90
+        },
+        {
+          "type": "attribute_value",
+          "attribute": "setting_pitch",
+          "value": 30
+        },
+        {
+          "type": "attribute_value",
+          "attribute": "setting_volume",
+          "value": 80
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            "réglé",
+            [
+              "IndexCommand",
+              {
+                "index": 1
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_value",
+          "attribute": "setting_voice",
+          "value": "en-voice"
+        },
+        {
+          "type": "attribute_value",
+          "attribute": "setting_voice",
+          "value": "absent"
+        },
+        {
+          "type": "attribute_value",
+          "attribute": "setting_rate",
+          "value": 150
+        },
+        {
+          "type": "attribute_value",
+          "attribute": "setting_rate",
+          "value": true
+        },
+        {
+          "type": "attribute_value",
+          "attribute": "setting_unknown",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_request",
+          "attribute": "setting_rate"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "setting_voice"
+        }
+      ]
+    }
+  ]
+}

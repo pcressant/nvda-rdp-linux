@@ -1,0 +1,206 @@
+{
+  "description": "Speech module with NVDA attached: SSML marks become indexes; NVDA's indexes become BEGIN, INDEX MARK and END.",
+  "component": "speechd",
+  "steps": [
+    {
+      "accept": "speech"
+    },
+    {
+      "send": "speech",
+      "hex": "11"
+    },
+    {
+      "send": "speech",
+      "hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "attribute": "supportedCommands",
+          "value": [
+            "BreakCommand",
+            "CharacterModeCommand",
+            "IndexCommand",
+            "LangChangeCommand",
+            "PitchCommand",
+            "RateCommand",
+            "VolumeCommand"
+          ],
+          "type": "attribute_value"
+        },
+        {
+          "attribute": "language",
+          "value": "fr_FR",
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "module": [
+        "INIT"
+      ]
+    },
+    {
+      "module": [
+        "AUDIO",
+        "audio_output_method=libao",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "LOGLEVEL",
+        "log_level=3",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SET",
+        "rate=0",
+        "pitch=0",
+        "pitch_range=0",
+        "volume=0",
+        "punctuation_mode=some",
+        "spelling_mode=off",
+        "cap_let_recogn=none",
+        "language=fr-FR",
+        "synthesis_voice=NULL",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SPEAK",
+        "<speak>Bonjour <mark name=\"m1\"/>tout le <mark name=\"m2\"/>monde &amp; plus</speak>",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 1,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 2,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 3,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 4,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 0,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "module": [
+        "CHAR",
+        "a",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 5,
+          "type": "index"
+        },
+        {
+          "index": 6,
+          "type": "index"
+        },
+        {
+          "index": 0,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "module": [
+        "KEY",
+        "space",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 7,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 8,
+          "type": "index"
+        },
+        {
+          "index": 0,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "module": [
+        "SOUND_ICON",
+        "bell",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SPEAK",
+        "<speak>fin</speak>",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 9,
+          "type": "index"
+        },
+        {
+          "index": 10,
+          "type": "index"
+        }
+      ]
+    }
+  ]
+}

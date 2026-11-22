@@ -1,0 +1,5 @@
+# Speech Dispatcher instance of a remote session: everything goes to NVDA
+# through nvda-rdp-speechd-module.
+AddModule "nvda-rdp" "@LIBEXECDIR@/nvda-rdp-speechd-module" ""
+DefaultModule nvda-rdp
+LogLevel 3

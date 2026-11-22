@@ -1,0 +1,33 @@
+# braille-navigation-keys.json: Display keys resolved with the client's gesture map become BrlAPI commands for Orca; unbound gestures are ignored.
+startup:
+  trace {"src": "dbus", "call": "ready", "args": [["org.gnome.Mutter.RemoteDesktop", "org.gnome.Orca1.Service"]]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 1: {"accept": "braille"}
+step 2: {"send": "braille", "hex": "11"}
+  braille <- {"hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+step 3: {"send": "braille", "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  braille <- {"json": "{\"attribute\": \"gestureMap\", \"type\": \"attribute_request\"}"}
+  braille <- {"json": "{\"channel\": \"NVDA-BRAILLE\", \"type\": \"protocol_version\", \"version\": 2}"}
+step 4: {"send": "braille", "json": [{"attribute": "numCells", "value": 40, "type": "attribute_value"}]}
+step 5: {"orca": "connect"}
+  orca <- {"action": "connect", "displaySize": [40, 1], "driverName": "RDAccess", "modelIdentifier": "nvda"}
+step 6: {"orca": "enter"}
+  orca <- {"action": "enter"}
+step 7: {"orca": "accept_commands"}
+  orca <- {"action": "accept_commands"}
+step 8: {"send": "braille", "json": [{"attribute": "gestureMap", "value": ["GlobalGestureMap", {"globalCommands.GlobalCommands": {"braille_scrollBack": "br(brltty):fwinlt", "braille_scrollForward": "br(brltty):fwinrt", "braille_previousLine": "br(brltty):lnup", "braille_nextLine": "br(brltty):lndn", "braille_routeTo": "br(brltty):route", "braille_toFocus": "br(brltty):home", "toggleInputHelp": "br(brltty):learn", "kb:control+home": "br(brltty):top", "kb:shift+tab": ["br(brltty):bot", "bk:space+dot1+dot2"], "kb:escape": "bk:space+dot1+dot5", "braille_dots": "bk:dot1+dot2+dot3+dot4+dot5+dot6+dot7+dot8"}}], "type": "attribute_value"}]}
+step 9: {"send": "braille", "json": [{"source": "brltty", "id": "fwinlt", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 10: {"send": "braille", "json": [{"source": "brltty", "id": "fwinrt", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 11: {"send": "braille", "json": [{"source": "brltty", "id": "lnup", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 12: {"send": "braille", "json": [{"source": "brltty", "id": "lndn", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 13: {"send": "braille", "json": [{"source": "brltty", "id": "home", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 14: {"send": "braille", "json": [{"source": "brltty", "id": "route", "routingIndex": 5, "model": "al", "type": "braille_input"}]}
+step 15: {"send": "braille", "json": [{"source": "brltty", "id": "route", "routingIndex": 39, "model": "al", "type": "braille_input"}]}
+step 16: {"send": "braille", "json": [{"source": "brltty", "id": "learn", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 17: {"send": "braille", "json": [{"source": "brltty", "id": "unknown", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 18: {"send": "braille", "json": [{"source": "brltty", "type": "braille_input"}]}
+step 19: {"orca": "keys"}
+  orca <- {"action": "keys", "keys": [{"command": 23, "argument": 0, "flags": 0}, {"command": 24, "argument": 0, "flags": 0}, {"command": 1, "argument": 0, "flags": 0}, {"command": 2, "argument": 0, "flags": 0}, {"command": 29, "argument": 0, "flags": 0}, {"command": 65536, "argument": 5, "flags": 0}, {"command": 65536, "argument": 39, "flags": 0}]}
+shutdown:
+returncode: 0

@@ -1,0 +1,87 @@
+{
+  "description": "Caps Lock synchronization: the local Caps Lock follows the remote one only while the RDP client is not focused.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR",
+    "--sync-caps-lock"
+  ],
+  "env": {
+    "DISPLAY": ":0"
+  },
+  "control": {
+    "capslock": "off"
+  },
+  "startup_trace": [
+    {
+      "src": "atspi",
+      "call": "registerEventListener",
+      "args": [
+        "window:deactivate"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_value",
+          "attribute": "capsLockToggle",
+          "value": true
+        }
+      ],
+      "settle": true
+    },
+    {
+      "focus": [
+        "window:activate",
+        "xfreerdp",
+        "FreeRDP: windows-remote"
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_value",
+          "attribute": "capsLockToggle",
+          "value": false
+        }
+      ],
+      "settle": true
+    },
+    {
+      "focus": [
+        "window:deactivate",
+        "xfreerdp",
+        "FreeRDP: windows-remote"
+      ]
+    },
+    {
+      "capslock": "on"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_value",
+          "attribute": "capsLockToggle",
+          "value": true
+        }
+      ],
+      "settle": true
+    }
+  ]
+}

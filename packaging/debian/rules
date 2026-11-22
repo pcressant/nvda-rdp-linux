@@ -1,0 +1,43 @@
+#!/usr/bin/make -f
+# The FreeRDP plugin and the GNOME Remote Desktop library are two CMake
+# projects; the Python code is installed by the *.install files.
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+include /usr/share/dpkg/architecture.mk
+
+CMAKE = --buildsystem=cmake+ninja
+SERVER = $(CURDIR)/debian/nvda-rdp-server
+
+%:
+	dh $@ --with python3
+
+override_dh_auto_configure:
+	dh_auto_configure $(CMAKE) --sourcedirectory=freerdp-plugin --builddirectory=build-freerdp-plugin
+	dh_auto_configure $(CMAKE) --sourcedirectory=grd-preload --builddirectory=build-grd-preload
+
+override_dh_auto_build:
+	dh_auto_build $(CMAKE) --builddirectory=build-freerdp-plugin
+	dh_auto_build $(CMAKE) --builddirectory=build-grd-preload
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider
+endif
+
+override_dh_auto_install:
+	dh_auto_install $(CMAKE) --builddirectory=build-freerdp-plugin \
+	  --destdir=debian/nvda-rdp-freerdp-plugin
+	dh_auto_install $(CMAKE) --builddirectory=build-grd-preload --destdir=$(SERVER)
+	cd packaging/server && DESTDIR=$(SERVER) \
+	  LIBEXECDIR=/usr/libexec/nvda-rdp-linux \
+	  PKGLIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH)/nvda-rdp-linux \
+	  PKGDATADIR=/usr/share/nvda-rdp-linux \
+	  USERUNITDIR=/usr/lib/systemd/user \
+	  PYTHON=/usr/bin/python3 \
+	  SPEECH_DISPATCHER=/usr/bin/speech-dispatcher \
+	  SESSION_PATH=/usr/bin \
+	  sh install.sh
+	install -d debian/nvda-rdp-client/usr/bin
+	sed 's|@PYTHON@|/usr/bin/python3|' packaging/client/nvda-rdp-client.in \
+	  > debian/nvda-rdp-client/usr/bin/nvda-rdp-client
+	chmod 755 debian/nvda-rdp-client/usr/bin/nvda-rdp-client

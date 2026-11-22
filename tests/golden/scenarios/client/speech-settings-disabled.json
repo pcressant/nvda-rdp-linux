@@ -1,0 +1,87 @@
+{
+  "description": "Driver settings management disabled (default): settings are advertised empty and remote changes are ignored.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR"
+  ],
+  "fake": {
+    "ssip_voices": [
+      [
+        "fr-voice",
+        "fr-FR",
+        "none"
+      ],
+      [
+        "en-voice",
+        "en-US",
+        ""
+      ]
+    ]
+  },
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_request",
+          "attribute": "supportedSettings"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "setting_rate"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "setting_voice"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "availableVoices"
+        },
+        {
+          "type": "attribute_request",
+          "attribute": "_availableLanguages"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "attribute_value",
+          "attribute": "setting_rate",
+          "value": 90
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "speak",
+          "sequence": [
+            "après",
+            [
+              "IndexCommand",
+              {
+                "index": 1
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

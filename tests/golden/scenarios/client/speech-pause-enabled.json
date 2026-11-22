@@ -1,0 +1,39 @@
+{
+  "description": "pause_speech with --enable-pause, real capture then resume.",
+  "args": [
+    "--no-braille",
+    "--language",
+    "fr_FR",
+    "--enable-pause"
+  ],
+  "steps": [
+    {
+      "connect": "speech"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v1.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "server-protocol-version-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "fixture": "pause-speech-v2-jsonl.hex"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "type": "pause_speech",
+          "switch": false
+        },
+        {
+          "type": "pause_speech",
+          "switch": 1
+        }
+      ]
+    }
+  ]
+}

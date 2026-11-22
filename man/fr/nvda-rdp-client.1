@@ -81,6 +81,15 @@ sont joués. Par défaut :
 .BI \-\-audio\-player " COMMANDE"
 Programme qui joue un fichier WAV reçu sur son entrée standard. Par défaut :
 .BR "pw\-play \-" .
+.TP
+.BI \-\-focus\-application " NOM"
+Nom de la fenêtre ou de l'application du client RDP : le braille distant est
+affiché, et la parole distante maintenue, tant qu'une fenêtre dont le nom contient
+.I NOM
+a le focus. Répétable. Par défaut :
+.B freerdp
+et
+.BR remmina .
 .SS Parole
 .TP
 .B \-\-no\-speech
@@ -106,6 +115,12 @@ espeak-ng de Speech Dispatcher répétait la phrase à la reprise.
 Laisser le NVDA distant lire et modifier la voix, le débit, la hauteur et le
 volume locaux (la « gestion des paramètres du pilote » de RDAccess).
 Désactivé par défaut.
+.TP
+.B \-\-keep\-speech\-on\-blur
+Laisser continuer la parole distante quand la fenêtre RDP perd le focus. Par
+défaut, elle est arrêtée, comme le ferait une annulation de NVDA, pour ne pas
+parler par-dessus le lecteur d'écran local, et NVDA est informé que la parole
+est terminée.
 .SS Braille
 .TP
 .B \-\-no\-braille
@@ -121,19 +136,11 @@ vraie. Par défaut : 40 cellules, 1 ligne.
 .TP
 .BI \-\-brlapi\-priority " N"
 Priorité BrlAPI, de 1 à 100, tant que la fenêtre RDP a le focus. Par défaut :
-60.
+80, au-dessus des niveaux d'Orca (50, et 70 en revue à plat), pour qu'Orca ne
+puisse pas reprendre la plage tant que la fenêtre RDP a le focus.
 .TP
 .B \-\-no\-braille\-input
 Ne pas envoyer les touches de la plage braille au NVDA distant.
-.TP
-.BI \-\-focus\-application " NOM"
-Nom de la fenêtre ou de l'application du client RDP : le braille distant est
-affiché tant qu'une fenêtre dont le nom contient
-.I NOM
-a le focus. Répétable. Par défaut :
-.B freerdp
-et
-.BR remmina .
 .TP
 .B \-\-sync\-caps\-lock
 Aligner le verrouillage des majuscules local sur celui du NVDA distant quand
@@ -158,6 +165,10 @@ greffon lit les mêmes variables.
 .TP
 .BR LC_ALL ", " LC_MESSAGES ", " LANG
 Langue par défaut.
+.TP
+.B NVDA_RDP_DVC_DEBUG
+Lue par le greffon, dans l'environnement du client RDP : si elle est définie,
+chaque bloc des deux canaux est journalisé avec un vidage hexadécimal.
 .SH FICHIERS
 .TP
 .I $XDG_RUNTIME_DIR/nvda-rdp-linux/speech.sock
@@ -222,12 +233,13 @@ journalctl \-\-user \-u nvda\-rdp\-client \-f
 .RE
 .SH NOTES
 La parole et le braille qui passent par le client sont ce que présente le
-lecteur d'écran distant, documents et texte saisi compris. Le journal contient
-le texte dit et les cellules braille aux niveaux
-.B INFO
-et
-.BR DEBUG ;
-gardez-le privé.
+lecteur d'écran distant, documents et texte saisi compris. Le texte dit, les
+cellules braille et les gestes ne sont journalisés qu'au niveau
+.BR DEBUG ,
+et les blocs du greffon qu'avec
+.BR NVDA_RDP_DVC_DEBUG ;
+gardez ces journaux privés. Si le service redémarre pendant une session, le
+greffon s'y reconnecte de lui-même.
 .PP
 RDAccess 1.x n'est pas pris en charge.
 .SH VOIR AUSSI

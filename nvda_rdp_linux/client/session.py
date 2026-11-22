@@ -163,7 +163,7 @@ class RdAccessSession:
 
     def _handle_message(self, message: dict[str, Any]) -> None:
         message_type = message.get("type")
-        LOG.info("received RDAccess %s message type=%r", self.KIND, message_type)
+        LOG.debug("received RDAccess %s message type=%r", self.KIND, message_type)
         if message_type == MESSAGE_PROTOCOL_VERSION:
             channel = message.get("channel")
             if channel is not None and channel != self.CHANNEL_NAME:

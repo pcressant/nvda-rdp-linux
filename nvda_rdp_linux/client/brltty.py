@@ -21,7 +21,10 @@ from ..common.braille import BrailleGesture
 LOG = logging.getLogger(__name__)
 
 PRIORITY_DISABLED = 0
-PRIORITY_REMOTE_ACTIVE = 60
+# Above Orca's own levels (50 normally, 70 in flat review mode), so that Orca
+# entering flat review behind a focused RDP client cannot take the display.
+# The remote output drops to PRIORITY_DISABLED whenever the client loses focus.
+PRIORITY_REMOTE_ACTIVE = 80
 KEY_POLL_INTERVAL = 0.05
 GESTURE_SOURCE = "brltty"
 # Window or application names of supported RDP clients (substring, case-insensitive).
@@ -396,6 +399,8 @@ class AtSpiFocusTracker:
         self._patterns = tuple(pattern.casefold() for pattern in application_patterns)
         self._thread: threading.Thread | None = None
         self._active = False
+        # The RDP client window that last received window:activate.
+        self._window: Any = None
 
     def start(self) -> None:
         self._registry.registerEventListener(self._on_window_event, "window:activate")
@@ -410,9 +415,17 @@ class AtSpiFocusTracker:
 
     def close(self) -> None:
         self._set_active(False)
-        self._registry.deregisterEventListener(self._on_window_event, "window:activate")
-        self._registry.deregisterEventListener(self._on_window_event, "window:deactivate")
-        self._registry.stop()
+        # At session end the AT-SPI bus may already be gone; deregistering
+        # then fails, and that must not turn a clean stop into a crash.
+        for event_type in ("window:activate", "window:deactivate"):
+            try:
+                self._registry.deregisterEventListener(self._on_window_event, event_type)
+            except Exception as error:  # noqa: BLE001 - GLib.GError and D-Bus errors.
+                LOG.debug("cannot deregister AT-SPI %s listener: %s", event_type, error)
+        try:
+            self._registry.stop()
+        except Exception as error:  # noqa: BLE001 - GLib.GError and D-Bus errors.
+            LOG.debug("cannot stop the AT-SPI registry: %s", error)
         if self._thread is not None:
             self._thread.join(timeout=2)
 
@@ -430,12 +443,16 @@ class AtSpiFocusTracker:
         )
         if event.type.endswith(":activate"):
             active = matches
-        elif matches:
+            self._window = event.source if matches else None
+        elif matches and (self._window is None or event.source == self._window):
             active = False
+            self._window = None
         else:
-            # AT-SPI may report the newly activated window before the old,
-            # unrelated window's delayed deactivation.  That deactivation
-            # must not revoke FreeRDP's ownership of the braille display.
+            # AT-SPI may report the newly activated window before the old
+            # window's delayed deactivation: an unrelated window, or another
+            # window of the RDP client itself (Remmina moves the session to a
+            # new window when switching to full screen).  That deactivation
+            # must not revoke the focused RDP window's ownership.
             return
         LOG.debug(
             "AT-SPI event=%s application=%r window=%r remote_active=%s",

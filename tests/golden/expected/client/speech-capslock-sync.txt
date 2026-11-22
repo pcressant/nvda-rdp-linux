@@ -27,9 +27,11 @@ step 5: {"focus": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
 step 6: {"send": "speech", "json": [{"type": "attribute_value", "attribute": "capsLockToggle", "value": false}], "settle": true}
   speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}
 step 7: {"focus": ["window:deactivate", "xfreerdp", "FreeRDP: windows-remote"]}
+  speech <- {"text": "{\"index\": 0, \"type\": \"index\"}\n"}
   trace {"src": "atspi", "call": "event", "args": ["window:deactivate", "xfreerdp", "FreeRDP: windows-remote"]}
   trace {"src": "xset", "call": "run", "args": [["q"]]}
   trace {"src": "xdotool", "call": "run", "args": [["key", "Caps_Lock"]]}
+  trace {"src": "ssip", "call": "cancel", "args": []}
 step 8: {"capslock": "on"}
 step 9: {"send": "speech", "json": [{"type": "attribute_value", "attribute": "capsLockToggle", "value": true}], "settle": true}
   speech <- {"text": "{\"attribute\": \"language\", \"value\": \"fr_FR\", \"type\": \"attribute_value\"}\n"}

@@ -72,7 +72,7 @@ def test_reconnect_recovers_when_server_sends_attribute_before_version() -> None
 
 
 def test_fragmented_braille_display_is_logged(caplog) -> None:
-    caplog.set_level("INFO")
+    caplog.set_level("DEBUG")
     session = BrailleProtocolSession()
     session.feed(PROTOCOL_VERSION_2_LEGACY)
     session.feed(b'{"type":"display","cells":[1,')
@@ -81,7 +81,7 @@ def test_fragmented_braille_display_is_logged(caplog) -> None:
 
 
 def test_real_first_braille_display_has_40_cells(caplog) -> None:
-    caplog.set_level("INFO")
+    caplog.set_level("DEBUG")
     session = BrailleProtocolSession()
     session.feed(PROTOCOL_VERSION_2_LEGACY)
     session.feed(fixture_bytes("first-braille-display-v2-jsonl.hex"))

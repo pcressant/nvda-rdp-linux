@@ -23,7 +23,7 @@ step 5: {"send": "braille", "json": [{"type": "attribute_request", "attribute": 
   braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 24, \"type\": \"attribute_value\"}\n"}
 step 6: {"focus": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
   trace {"src": "atspi", "call": "event", "args": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
-  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 60]}
+  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 80]}
 step 7: {"send": "braille", "json": [{"type": "display", "cells": [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]}, {"type": "display", "cells": [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]}]}
   braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 24, \"type\": \"attribute_value\"}\n"}
   trace {"src": "brlapi", "call": "writeDots", "args": ["05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05"]}

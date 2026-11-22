@@ -4,6 +4,8 @@ startup:
   trace {"src": "ssip", "call": "set_output_module", "args": ["espeak-ng"]}
   trace {"src": "ssip", "call": "set_language", "args": ["fr-FR"]}
   trace {"src": "ssip", "call": "set_rate", "args": [50]}
+  trace {"src": "atspi", "call": "registerEventListener", "args": ["window:activate"]}
+  trace {"src": "atspi", "call": "registerEventListener", "args": ["window:deactivate"]}
 step 1: {"connect": "speech", "barrier": false}
 step 2: {"settle": true}
   speech <- {"hex": "11"}
@@ -12,5 +14,8 @@ step 3: {"disconnect": "speech"}
   trace {"src": "player", "call": "play", "args": [[], 8, "228355d3524ddd08a1c0d24a6686941fdd3dad22c968765cc8d8fd447ff24ee4"]}
 step 4: {"settle": true}
 shutdown:
+  trace {"src": "atspi", "call": "deregisterEventListener", "args": ["window:activate"]}
+  trace {"src": "atspi", "call": "deregisterEventListener", "args": ["window:deactivate"]}
+  trace {"src": "atspi", "call": "stop", "args": []}
   trace {"src": "ssip", "call": "close", "args": []}
 returncode: 0

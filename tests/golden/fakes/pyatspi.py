@@ -1,5 +1,8 @@
 """Golden fake of ``pyatspi``: window events come from the control file
 ``atspi-events``, one ``[event type, application name, window name]`` per line.
+
+Like libatspi, which caches accessibles, the same application and window
+names always give the same source object.
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ class _Registry:
     def __init__(self) -> None:
         self._listeners: list[tuple[object, str]] = []
         self._stop = threading.Event()
+        self._windows: dict[tuple[str, str], SimpleNamespace] = {}
 
     def registerEventListener(self, listener, *event_types: str) -> None:
         golden_trace.record("atspi", "registerEventListener", *event_types)
@@ -34,12 +38,17 @@ class _Registry:
         while not self._stop.wait(_POLL_SECONDS):
             for event_type, application, window in queue.pop_all():
                 golden_trace.record("atspi", "event", event_type, application, window)
-                app = SimpleNamespace(name=application)
-                source = SimpleNamespace(name=window, getApplication=lambda app=app: app)
-                event = SimpleNamespace(type=event_type, source=source)
+                event = SimpleNamespace(type=event_type, source=self._window(application, window))
                 for listener, wanted in list(self._listeners):
                     if wanted == event_type:
                         listener(event)
+
+    def _window(self, application: str, window: str) -> SimpleNamespace:
+        key = (application, window)
+        if key not in self._windows:
+            app = SimpleNamespace(name=application)
+            self._windows[key] = SimpleNamespace(name=window, getApplication=lambda: app)
+        return self._windows[key]
 
     def stop(self) -> None:
         golden_trace.record("atspi", "stop")

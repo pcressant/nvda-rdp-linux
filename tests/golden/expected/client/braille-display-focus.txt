@@ -21,7 +21,7 @@ step 5: {"send": "braille", "json": [{"type": "display", "cells": [1, 1, 1, 1, 1
   braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
 step 6: {"focus": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
   trace {"src": "atspi", "call": "event", "args": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
-  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 60]}
+  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 80]}
   trace {"src": "brlapi", "call": "writeDots", "args": ["01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01"]}
 step 7: {"send": "braille", "json": [{"type": "display", "cells": [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]}]}
   braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
@@ -35,7 +35,7 @@ step 10: {"focus": ["window:deactivate", "xfreerdp", "FreeRDP: windows-remote"]}
   trace {"src": "atspi", "call": "event", "args": ["window:deactivate", "xfreerdp", "FreeRDP: windows-remote"]}
 step 11: {"focus": ["window:activate", "org.remmina.Remmina", "Remmina"]}
   trace {"src": "atspi", "call": "event", "args": ["window:activate", "org.remmina.Remmina", "Remmina"]}
-  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 60]}
+  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 80]}
   trace {"src": "brlapi", "call": "writeDots", "args": ["03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03"]}
 step 12: {"focus": ["window:deactivate", "firefox", "Mozilla Firefox"]}
   trace {"src": "atspi", "call": "event", "args": ["window:deactivate", "firefox", "Mozilla Firefox"]}

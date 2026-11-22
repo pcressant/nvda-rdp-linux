@@ -42,7 +42,7 @@ Python client (one process, one thread per channel)
 
 The C plugin handles FreeRDP, the DVCs, and IPC transport. The Python client process listens on one socket per DVC, reconstructs JSON Lines messages, implements the client side of RDAccess, and communicates with Speech Dispatcher, PipeWire and BRLTTY.
 
-The plugin contains no RDAccess logic and generates no application-level bytes. It transports payloads in both directions and produces diagnostic dumps. The Python client sends XON on each connection, then handles the `protocolVersion=2` handshake and channel-specific responses.
+The plugin contains no RDAccess logic and generates no application-level bytes. It transports payloads in both directions; with `NVDA_RDP_DVC_DEBUG` set in the RDP client's environment, it also logs every block with a hex dump. It reconnects to the client socket when the client restarts during a session. The Python client sends XON on each connection, then handles the `protocolVersion=2` handshake and channel-specific responses.
 
 Main files:
 
@@ -433,6 +433,8 @@ Other options:
 --nvda-waves-dir DIR    play NVDA sounds such as waves\error.wav from DIR
 --audio-player CMD      player fed with a WAV file on stdin (default "pw-play -")
 --notify MODE           none, message, sound or both (default message)
+--keep-speech-on-blur   keep remote speech going when the RDP client loses
+                        focus (default: stop it, as NVDA's cancel would)
 ```
 
 ## NVDA Sounds
@@ -455,6 +457,8 @@ other add-ons are refused and logged.
 --sync-caps-lock         align the local Caps Lock with the remote NVDA when
                          the RDP client loses focus (X11 tools; uncertain on
                          Wayland)
+--brlapi-priority N      BrlAPI priority while focused (default 80, above
+                         Orca's 70 in flat review)
 --focus-application NAME RDP client window/application name, repeatable
                          (default: freerdp and remmina)
 ```
@@ -482,6 +486,13 @@ The first contains FreeRDP, drdynvc, and C plugin messages. The second contains
 the client: speech protocol, Speech Dispatcher, braille negotiation, cells and
 gestures. With the user service, the client log is in the journal instead
 (`journalctl --user -u nvda-rdp-client`).
+
+At the default levels the logs stay short and hold no content. The plugin's
+per-block lines (`received`, `forwarded`) only appear with
+`NVDA_RDP_DVC_DEBUG=1` in the RDP client's environment, and the client's
+spoken text, braille cells and gestures only with `--log-level DEBUG` (for
+the launcher: `RDACCESS_CLIENT_OPTIONS="--log-level DEBUG"`). The checks
+below need both; keep such logs private.
 
 Follow both logs during a session:
 

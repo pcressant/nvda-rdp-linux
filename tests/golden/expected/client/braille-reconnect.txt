@@ -19,7 +19,7 @@ step 4: {"send": "braille", "json": [{"type": "protocol_version", "version": 2, 
   braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
 step 5: {"focus": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
   trace {"src": "atspi", "call": "event", "args": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
-  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 60]}
+  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 80]}
 step 6: {"send": "braille", "json": [{"type": "display", "cells": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}]}
   braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
   trace {"src": "brlapi", "call": "writeDots", "args": ["01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01"]}

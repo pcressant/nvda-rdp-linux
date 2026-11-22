@@ -139,6 +139,31 @@ def test_indexes_are_sent_only_when_speech_finishes() -> None:
     ]
 
 
+def test_stop_speech_cancels_locally_and_reports_done() -> None:
+    output = FakeOutput()
+    sent: list[bytes] = []
+    session = ProtocolSession(output, send=sent.append)
+    session.connect()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    session.feed(b'{"type":"speak","sequence":["long text",["IndexCommand",{"index":3}]]}\n')
+
+    session.stop_speech()
+
+    assert output.cancel_count == 1
+    assert sent[-1] == b'{"index": 0, "type": "index"}\n'
+
+
+def test_stop_speech_survives_a_broken_transport() -> None:
+    def broken(_payload: bytes) -> None:
+        raise BrokenPipeError
+
+    output = FakeOutput()
+    session = ProtocolSession(output, send=broken)
+    session._connected = True
+    session.stop_speech()
+    assert output.cancel_count == 1
+
+
 def test_unknown_command_is_not_spoken(caplog: pytest.LogCaptureFixture) -> None:
     rendered = render_sequence(["safe", ["FutureCommand", {"value": 3}]])
     assert rendered.text == "safe"
@@ -201,7 +226,7 @@ def test_cancel() -> None:
 def test_real_pause_fixture_is_recognized_and_ignored(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    caplog.set_level("INFO")
+    caplog.set_level("DEBUG")
     output = FakeOutput()
     session = ProtocolSession(output)
     session.feed(PROTOCOL_VERSION_2_LEGACY)

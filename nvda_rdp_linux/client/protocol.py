@@ -191,7 +191,7 @@ def render_sequence(sequence: object) -> RenderedSequence:
             if not isinstance(index, int) or isinstance(index, bool):
                 LOG.warning("ignoring invalid IndexCommand parameters=%s", parameters)
                 continue
-            LOG.info("received IndexCommand parameters=%s", parameters)
+            LOG.debug("received IndexCommand parameters=%s", parameters)
             flush_text()
             if segments:
                 last = segments[-1]
@@ -205,7 +205,7 @@ def render_sequence(sequence: object) -> RenderedSequence:
                 continue
             flush_text()
             state.character_mode = value
-            LOG.info("received CharacterModeCommand state=%s", value)
+            LOG.debug("received CharacterModeCommand state=%s", value)
         elif command.name == COMMAND_LANG_CHANGE:
             lang = parameters.get("lang")
             if lang is not None and not isinstance(lang, str):
@@ -213,7 +213,7 @@ def render_sequence(sequence: object) -> RenderedSequence:
                 continue
             flush_text()
             state.language = lang or None
-            LOG.info("received LangChangeCommand lang=%r", lang)
+            LOG.debug("received LangChangeCommand lang=%r", lang)
         elif command.name in PROSODY_COMMANDS:
             prosody = parse_prosody(parameters)
             if prosody is None:
@@ -221,7 +221,7 @@ def render_sequence(sequence: object) -> RenderedSequence:
                 continue
             flush_text()
             state.prosody[PROSODY_COMMANDS[command.name]] = prosody
-            LOG.info("received %s %s", command.name, prosody)
+            LOG.debug("received %s %s", command.name, prosody)
         elif command.name == COMMAND_BREAK:
             time = parameters.get("time", 0)
             if not is_number(time) or time < 0:
@@ -302,7 +302,7 @@ class ProtocolSession(RdAccessSession):
         if message_type == MESSAGE_SPEAK:
             self._speak(message.get("sequence"))
         elif message_type == MESSAGE_CANCEL:
-            LOG.info("cancelling local speech")
+            LOG.debug("cancelling local speech")
             self._output.cancel()
             self._send_reached_indexes((), done=True)
         elif message_type == MESSAGE_PAUSE_SPEECH:
@@ -310,10 +310,10 @@ class ProtocolSession(RdAccessSession):
             if not isinstance(switch, bool):
                 LOG.error("invalid pause_speech switch=%r", switch)
             elif self._enable_pause:
-                LOG.info("pausing local speech switch=%s", switch)
+                LOG.debug("pausing local speech switch=%s", switch)
                 self._output.pause(switch)
             else:
-                LOG.info("ignoring unsupported pause_speech switch=%s", switch)
+                LOG.debug("ignoring unsupported pause_speech switch=%s", switch)
         elif message_type == MESSAGE_TONE:
             self._tone(message)
         elif message_type == MESSAGE_WAVE:
@@ -321,12 +321,27 @@ class ProtocolSession(RdAccessSession):
             if not isinstance(file_name, str):
                 LOG.error("invalid wave message: %r", message)
             elif self._audio is None:
-                LOG.info("ignoring wave fileName=%r without audio output", file_name)
+                LOG.debug("ignoring wave fileName=%r without audio output", file_name)
             else:
                 self._audio.wave(file_name)
         else:
             return False
         return True
+
+    def stop_speech(self) -> None:
+        """Stop remote speech locally, as if NVDA had sent ``cancel``.
+
+        Called when the RDP client loses focus, so that the remote voice does
+        not talk over the local screen reader.  Only this client's Speech
+        Dispatcher messages are cancelled; the "done" index tells NVDA that
+        nothing is being spoken any more.
+        """
+        LOG.info("stopping remote speech: RDP client lost focus")
+        try:
+            self._output.cancel()
+            self._send_reached_indexes((), done=True)
+        except Exception as error:  # noqa: BLE001 - SSIP or IPC failure from another thread.
+            LOG.warning("cannot stop remote speech: %s", error)
 
     def _speak(self, sequence: object) -> None:
         if (
@@ -347,7 +362,7 @@ class ProtocolSession(RdAccessSession):
         if not rendered.segments:
             self._send_reached_indexes(rendered.unattached_indexes, done=True)
             return
-        LOG.info("submitting speech text=%r", rendered.text)
+        LOG.debug("submitting speech text=%r", rendered.text)
         last = len(rendered.segments) - 1
         for position, segment in enumerate(rendered.segments):
             on_done = None
@@ -379,7 +394,7 @@ class ProtocolSession(RdAccessSession):
         if not all(is_number(value) for value in (hz, length, left, right)):
             LOG.error("invalid tone message: %r", message)
         elif self._audio is None:
-            LOG.info("ignoring tone hz=%r length=%r without audio output", hz, length)
+            LOG.debug("ignoring tone hz=%r length=%r without audio output", hz, length)
         else:
             self._audio.tone(hz, int(length), int(left), int(right))
 
@@ -387,7 +402,7 @@ class ProtocolSession(RdAccessSession):
         """Report indexes; index 0 is RDAccess's "done speaking" sentinel."""
         for index in (*indexes, 0) if done else indexes:
             if self.send_message(MESSAGE_INDEX, index=index):
-                LOG.info("sent speech index=%d", index)
+                LOG.debug("sent speech index=%d", index)
 
     def _attribute_value(self, attribute: str) -> object:
         if attribute == ATTRIBUTE_LANGUAGE:

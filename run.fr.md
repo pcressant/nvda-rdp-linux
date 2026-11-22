@@ -49,8 +49,10 @@ reconstitue les messages JSON Lines, implémente le côté client de RDAccess et
 dialogue avec Speech Dispatcher, PipeWire et BRLTTY.
 
 Le greffon ne contient aucune logique RDAccess et ne produit aucun octet de
-niveau applicatif. Il transporte les données dans les deux sens et produit
-des traces de diagnostic. Le client Python envoie XON à chaque connexion,
+niveau applicatif. Il transporte les données dans les deux sens ; avec
+`NVDA_RDP_DVC_DEBUG` défini dans l'environnement du client RDP, il journalise
+aussi chaque bloc avec un vidage hexadécimal. Il se reconnecte à la socket du
+client quand celui-ci redémarre pendant une session. Le client Python envoie XON à chaque connexion,
 puis mène la négociation `protocolVersion=2` et les réponses propres à chaque
 canal.
 
@@ -489,6 +491,8 @@ Autres options :
 --nvda-waves-dir DIR    play NVDA sounds such as waves\error.wav from DIR
 --audio-player CMD      player fed with a WAV file on stdin (default "pw-play -")
 --notify MODE           none, message, sound or both (default message)
+--keep-speech-on-blur   keep remote speech going when the RDP client loses
+                        focus (default: stop it, as NVDA's cancel would)
 ```
 
 * `--pitch-change N` : décalage de hauteur ajouté à la parole distante, comme
@@ -504,7 +508,10 @@ Autres options :
 * `--audio-player CMD` : lecteur qui reçoit un fichier WAV sur son entrée
   standard (par défaut `pw-play -`) ;
 * `--notify MODE` : `none`, `message`, `sound` ou `both` (par défaut
-  `message`).
+  `message`) ;
+* `--keep-speech-on-blur` : laisser continuer la parole distante quand le
+  client RDP perd le focus (par défaut, elle est arrêtée, comme le ferait une
+  annulation de NVDA).
 
 ## Sons de NVDA
 
@@ -527,6 +534,8 @@ extensions sont refusés et journalisés.
 --sync-caps-lock         align the local Caps Lock with the remote NVDA when
                          the RDP client loses focus (X11 tools; uncertain on
                          Wayland)
+--brlapi-priority N      BrlAPI priority while focused (default 80, above
+                         Orca's 70 in flat review)
 --focus-application NAME RDP client window/application name, repeatable
                          (default: freerdp and remmina)
 ```
@@ -537,6 +546,8 @@ extensions sont refusés et journalisés.
   (40×1 par défaut) ;
 * `--no-braille-input` : ne pas transmettre les touches de la plage au NVDA
   distant ;
+* `--brlapi-priority N` : priorité BrlAPI tant que le client RDP a le focus
+  (80 par défaut, au-dessus du 70 d'Orca en revue à plat) ;
 * `--sync-caps-lock` : aligner le verrouillage des majuscules local sur celui
   du NVDA distant quand le client RDP perd le focus (outils X11 ; incertain
   sous Wayland) ;
@@ -568,6 +579,14 @@ second contient ceux du client : protocole de parole, Speech Dispatcher,
 négociation braille, cellules et gestes. Avec le service utilisateur, le
 journal du client est dans le journal système
 (`journalctl --user -u nvda-rdp-client`).
+
+Aux niveaux par défaut, les journaux restent courts et ne contiennent aucun
+contenu. Les lignes par bloc du greffon (`received`, `forwarded`)
+n'apparaissent qu'avec `NVDA_RDP_DVC_DEBUG=1` dans l'environnement du client
+RDP, et le texte dit, les cellules braille et les gestes du client qu'avec
+`--log-level DEBUG` (pour le lanceur :
+`RDACCESS_CLIENT_OPTIONS="--log-level DEBUG"`). Les vérifications ci-dessous
+demandent les deux ; gardez ces journaux privés.
 
 Suivre les deux journaux pendant une session :
 

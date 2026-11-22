@@ -20,7 +20,7 @@ step 5: {"send": "braille", "fixture": "braille-server-gesture-map-request-v1.he
   braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
 step 6: {"focus": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
   trace {"src": "atspi", "call": "event", "args": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
-  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 60]}
+  trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 80]}
 step 7: {"send": "braille", "json": [{"type": "display", "cells": [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]}]}
   braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
   trace {"src": "brlapi", "call": "writeDots", "args": ["07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07"]}

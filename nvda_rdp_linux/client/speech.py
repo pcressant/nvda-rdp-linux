@@ -138,7 +138,7 @@ class SpeechDispatcherOutput:
         finally:
             if character_mode:
                 self._client.set_spelling(False)
-        LOG.info(
+        LOG.debug(
             "Speech Dispatcher accepted speak character_mode=%s text=%r",
             character_mode,
             text,
@@ -153,12 +153,12 @@ class SpeechDispatcherOutput:
             self._client.speak(f'<speak><break time="{int(milliseconds)}ms"/></speak>')
         finally:
             self._client.set_data_mode(DataMode.TEXT)
-        LOG.info("Speech Dispatcher accepted break of %d ms", milliseconds)
+        LOG.debug("Speech Dispatcher accepted break of %d ms", milliseconds)
 
     @_locked
     def cancel(self) -> None:
         self._client.cancel()
-        LOG.info("Speech Dispatcher accepted cancel")
+        LOG.debug("Speech Dispatcher accepted cancel")
 
     @_locked
     def pause(self, switch: bool) -> None:
@@ -166,7 +166,7 @@ class SpeechDispatcherOutput:
             self._client.pause()
         else:
             self._client.resume()
-        LOG.info("Speech Dispatcher accepted %s", "pause" if switch else "resume")
+        LOG.debug("Speech Dispatcher accepted %s", "pause" if switch else "resume")
 
     @_locked
     def close(self) -> None:

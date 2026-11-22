@@ -219,8 +219,10 @@
               ++ clientTools pkgs
               ++ testTools pkgs;
             PYTHONPATH = "${clientPythonPath pkgs}:${testPythonPath pkgs}";
+            # Only this shell's typelibs: those of the host session (another
+            # GLib release) would not match the shell's PyGObject.
             shellHook = ''
-              export GI_TYPELIB_PATH="${clientTypelibPath pkgs}''${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}"
+              export GI_TYPELIB_PATH="${clientTypelibPath pkgs}"
             '';
           };
         }

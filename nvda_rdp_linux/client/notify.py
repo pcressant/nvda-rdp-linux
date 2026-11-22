@@ -56,7 +56,7 @@ class ConnectionNotifier:
     def notify(self, connected: bool) -> None:
         if self._mode in ("message", "both") and self._speak is not None:
             message = message_for(self._kind, connected, self._language)
-            LOG.info("notifying %r", message)
+            LOG.debug("notifying %r", message)
             try:
                 self._speak(message)
             except Exception as error:  # noqa: BLE001 - a notification must not stop the client.

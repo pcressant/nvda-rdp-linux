@@ -80,6 +80,15 @@ played. Default:
 .BI \-\-audio\-player " COMMAND"
 Program that plays a WAV file given on its standard input. Default:
 .BR "pw\-play \-" .
+.TP
+.BI \-\-focus\-application " NAME"
+Name of the window or application of the RDP client: remote braille is
+shown, and remote speech kept, while a window whose name contains
+.I NAME
+has the focus. Repeatable. Default:
+.B freerdp
+and
+.BR remmina .
 .SS Speech
 .TP
 .B \-\-no\-speech
@@ -105,6 +114,11 @@ Dispatcher repeated the sentence when speech resumed.
 .B \-\-settings\-management
 Let the remote NVDA read and change the local voice, rate, pitch and volume
 (RDAccess's "driver settings management"). Off by default.
+.TP
+.B \-\-keep\-speech\-on\-blur
+Keep the remote speech going when the RDP window loses the focus. By default
+it is stopped, as NVDA's own cancel would, so that it does not talk over the
+local screen reader, and NVDA is told that speech is done.
 .SS Braille
 .TP
 .B \-\-no\-braille
@@ -121,19 +135,11 @@ Default: 40 cells, 1 row.
 .TP
 .BI \-\-brlapi\-priority " N"
 BrlAPI priority, from 1 to 100, while the RDP window has the focus. Default:
-60.
+80, above Orca's levels (50, and 70 in flat review), so that Orca cannot take
+the display back while the RDP window has the focus.
 .TP
 .B \-\-no\-braille\-input
 Do not send the keys of the braille display to the remote NVDA.
-.TP
-.BI \-\-focus\-application " NAME"
-Name of the window or application of the RDP client: the remote braille is
-shown while a window whose name contains
-.I NAME
-has the focus. Repeatable. Default:
-.B freerdp
-and
-.BR remmina .
 .TP
 .B \-\-sync\-caps\-lock
 Align the local Caps Lock with the remote NVDA's when the RDP window loses the
@@ -158,6 +164,10 @@ plugin reads the same variables.
 .TP
 .BR LC_ALL ", " LC_MESSAGES ", " LANG
 Default language.
+.TP
+.B NVDA_RDP_DVC_DEBUG
+Read by the plugin, in the RDP client's environment: when set, every block
+of the two channels is logged with a hex dump.
 .SH FILES
 .TP
 .I $XDG_RUNTIME_DIR/nvda-rdp-linux/speech.sock
@@ -220,12 +230,13 @@ journalctl \-\-user \-u nvda\-rdp\-client \-f
 .RE
 .SH NOTES
 The speech and braille that pass through the client are what the remote
-screen reader presents, documents and typed text included. The log contains
-the spoken text and the braille cells at the
-.B INFO
-and
+screen reader presents, documents and typed text included. The spoken text,
+the braille cells and the gestures are only logged at the
 .B DEBUG
-levels; keep it private.
+level, and the plugin's blocks only with
+.BR NVDA_RDP_DVC_DEBUG ;
+keep such logs private. If the service restarts during a session, the plugin
+connects to it again on its own.
 .PP
 RDAccess 1.x is not supported.
 .SH SEE ALSO

@@ -35,14 +35,24 @@ contient le greffon.
 * bips et sons de NVDA joués localement (depuis une copie du répertoire
   `waves` de NVDA) ;
 * braille distant sur la plage locale de BRLTTY tant que la fenêtre RDP a le
-  focus, rendu à Orca dès qu'elle le perd ;
+  focus, rendu à Orca dès qu'elle le perd ; la priorité BrlAPI (80 par
+  défaut, `--brlapi-priority`) reste au-dessus de celle d'Orca, revue à plat
+  comprise ;
+* parole distante arrêtée quand la fenêtre RDP perd le focus, pour ne pas
+  parler par-dessus Orca (`--keep-speech-on-blur` la laisse continuer) ;
 * touches de la plage et touches de routage renvoyées au NVDA distant, avec
   la table de gestes BRLTTY standard de NVDA ; saisie au clavier braille ;
 * en option : réglage à distance de la voix locale depuis NVDA,
   synchronisation du verrouillage des majuscules, annonces de connexion ;
 * un seul service utilisateur pour les deux canaux, qui continue de
   fonctionner si Speech Dispatcher ou BRLTTY est indisponible et se reconnecte
-  seul à BRLTTY.
+  seul à BRLTTY ; le greffon se reconnecte au service quand celui-ci redémarre
+  pendant une session.
+
+Les journaux restent courts au niveau `INFO` par défaut. Le texte dit, les
+cellules braille et les gestes ne sont journalisés qu'avec
+`--log-level DEBUG` ; le greffon ne vide chaque bloc DVC que si
+`NVDA_RDP_DVC_DEBUG` est défini dans l'environnement du client RDP.
 
 La langue de la voix et des messages suit la locale (`LC_ALL`,
 `LC_MESSAGES`, `LANG`), sauf si `--language` est donné.

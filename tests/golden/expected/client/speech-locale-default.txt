@@ -4,6 +4,8 @@ startup:
   trace {"src": "ssip", "call": "set_output_module", "args": ["espeak-ng"]}
   trace {"src": "ssip", "call": "set_language", "args": ["de-DE"]}
   trace {"src": "ssip", "call": "set_rate", "args": [50]}
+  trace {"src": "atspi", "call": "registerEventListener", "args": ["window:activate"]}
+  trace {"src": "atspi", "call": "registerEventListener", "args": ["window:deactivate"]}
 step 1: {"connect": "speech"}
   speech <- {"hex": "11"}
   speech <- {"text": "{\"attribute\": \"language\", \"value\": \"de_DE\", \"type\": \"attribute_value\"}\n"}
@@ -27,5 +29,8 @@ shutdown:
   trace {"src": "ssip", "call": "set_pitch", "args": [0]}
   trace {"src": "ssip", "call": "set_spelling", "args": [false]}
   trace {"src": "ssip", "call": "speak", "args": ["Remote speech disconnected", false, null]}
+  trace {"src": "atspi", "call": "deregisterEventListener", "args": ["window:activate"]}
+  trace {"src": "atspi", "call": "deregisterEventListener", "args": ["window:deactivate"]}
+  trace {"src": "atspi", "call": "stop", "args": []}
   trace {"src": "ssip", "call": "close", "args": []}
 returncode: 0

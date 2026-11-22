@@ -262,11 +262,13 @@ class Test:
         self.wait(self.client, f"sudo test -S {runtime}/speech-dispatcher/speechd.sock", 60)
         self.wait(self.client, "test -S /tmp/.X11-unix/X0", 60)
         # Speech Dispatcher also loads its usual modules: name the recorder.
-        self.client.run(
-            f"sudo -u {CLIENT_USER} sh -c 'mkdir -p ~/.config/nvda-rdp-linux"
-            " && echo NVDA_RDP_OPTIONS=--output-module=recorder"
-            " > ~/.config/nvda-rdp-linux/environment'"
+        # Braille cells are only logged, at DEBUG: the client has no BRLTTY.
+        options = "NVDA_RDP_OPTIONS='--output-module=recorder --braille-capture --log-level DEBUG'"
+        setup = (
+            "mkdir -p ~/.config/nvda-rdp-linux"
+            f" && echo {shlex.quote(options)} > ~/.config/nvda-rdp-linux/environment"
         )
+        self.client.run(f"sudo -u {CLIENT_USER} sh -c {shlex.quote(setup)}")
         self.client.run(self.in_user("start nvda-rdp-client.service"))
         self.wait(self.client, f"sudo test -S {runtime}/nvda-rdp-linux/speech.sock", 60)
 
@@ -321,6 +323,21 @@ class Test:
         orca_spoke = f"sudo grep -v 'Remote speech connected' {record} | grep -q ."
         self.wait(self.client, f"{tab} >/dev/null 2>&1; sleep 1; {orca_spoke}", 120)
         self.client.run(f"sudo cat {record}")
+
+        self.subtest("Orca's braille reaches the client")
+        # The size is pushed by the client and asked for by the server.
+        self.wait(
+            self.server, self.journal_has("nvda-rdp-brlapi-server", "client display: 40 cells"), 60
+        )
+        # A display message with at least one raised dot.
+        shown = (
+            "sudo journalctl -t nvda-rdp-client -o cat | grep -Eq"
+            " 'braille display 40 cells: .*([1-9a-f][0-9a-f]|0[1-9a-f])'"
+        )
+        self.wait(self.client, f"{tab} >/dev/null 2>&1; sleep 1; {shown}", 120)
+        self.client.run(
+            "sudo journalctl -t nvda-rdp-client -o cat | grep 'braille display' | tail -n 3"
+        )
 
         self.subtest("Logs")
         self.dump()

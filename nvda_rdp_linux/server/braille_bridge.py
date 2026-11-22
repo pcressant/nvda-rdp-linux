@@ -4,6 +4,7 @@
 """The client's NVDA braille display, offered to Orca as a BrlAPI display.
 
 1. Size: the client's ``numCells`` is the display size the server reports.
+   It is requested when the channel is ready and taken from any push.
    Orca waits while it is 0 (orca@7f241c6:src/orca/braille.py:690-722) and
    reads it once otherwise, so a later change closes Orca's connection: Orca
    reconnects within about two seconds (braille.py:123, 770-790) and reads
@@ -169,6 +170,10 @@ class BrailleBridge:
         if not ready:
             self._last_cells = None
             return
+        # Ask for the size, as RDAccess's remote braille driver does on init
+        # (rdAccess@19f5c53: addon/brailleDisplayDrivers/remote.py:28-32):
+        # a client that only answers requests never pushes it.
+        self.channel.send(MESSAGE_ATTRIBUTE_REQUEST, attribute=ATTRIBUTE_NUM_CELLS)
         # The legacy push of the gesture map is pickled and skipped; ask for it in JSON.
         self.channel.send(MESSAGE_ATTRIBUTE_REQUEST, attribute=ATTRIBUTE_GESTURE_MAP)
 

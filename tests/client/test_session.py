@@ -13,7 +13,18 @@ import pytest
 from nvda_rdp_linux.client.braille import PROTOCOL_VERSION_2_LEGACY as BRAILLE_VERSION
 from nvda_rdp_linux.client.braille import BrailleProtocolSession
 from nvda_rdp_linux.client.protocol import PROTOCOL_VERSION_2_LEGACY as SPEECH_VERSION
-from nvda_rdp_linux.common.rdaccess import CONNECTION_XON, legacy_protocol_version_frame
+from nvda_rdp_linux.common.rdaccess import (
+    CONNECTION_XON,
+    MESSAGE_ATTRIBUTE_VALUE,
+    encode_json_line,
+    legacy_protocol_version_frame,
+)
+
+# What the braille session pushes after its version: its default 40 cells.
+BRAILLE_PUSH = [
+    encode_json_line(MESSAGE_ATTRIBUTE_VALUE, attribute=name, value=value)
+    for name, value in (("numCells", 40), ("numCols", 40), ("numRows", 1))
+]
 
 
 def test_legacy_version_frames_match_real_captures() -> None:
@@ -35,8 +46,8 @@ def connected_braille(**kwargs) -> tuple[BrailleProtocolSession, list[bytes]]:
 
 def test_versions_are_requested_after_negotiation() -> None:
     _session, sent = connected_braille(request_versions=True)
-    assert sent[:2] == [CONNECTION_XON, BRAILLE_VERSION]
-    assert [json.loads(payload) for payload in sent[2:]] == [
+    assert sent[:5] == [CONNECTION_XON, BRAILLE_VERSION, *BRAILLE_PUSH]
+    assert [json.loads(payload) for payload in sent[5:]] == [
         {"attribute": "rdAccessVersion", "type": "attribute_request"},
         {"attribute": "nvdaVersion", "type": "attribute_request"},
     ]
@@ -51,7 +62,7 @@ def test_version_values_are_recorded() -> None:
 def test_ping_and_stray_line_feeds_are_accepted(caplog: pytest.LogCaptureFixture) -> None:
     session, sent = connected_braille()
     session.feed(b'\n\n{"type":"ping"}\n\n')
-    assert sent == [CONNECTION_XON, BRAILLE_VERSION]
+    assert sent == [CONNECTION_XON, BRAILLE_VERSION, *BRAILLE_PUSH]
     assert "ignoring unsupported" not in caplog.text
 
 
@@ -109,5 +120,5 @@ def test_speech_legacy_frame_on_braille_channel_is_garbage(
 ) -> None:
     session, sent = connected_braille()
     session.feed(SPEECH_VERSION)
-    assert sent == [CONNECTION_XON, BRAILLE_VERSION]
+    assert sent == [CONNECTION_XON, BRAILLE_VERSION, *BRAILLE_PUSH]
     assert "discarding invalid" in caplog.text

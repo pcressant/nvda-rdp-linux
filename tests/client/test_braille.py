@@ -4,7 +4,11 @@ import json
 from pathlib import Path
 
 from nvda_rdp_linux.client.braille import PROTOCOL_VERSION_2_LEGACY, BrailleProtocolSession
-from nvda_rdp_linux.common.rdaccess import CONNECTION_XON
+from nvda_rdp_linux.common.rdaccess import (
+    CONNECTION_XON,
+    MESSAGE_ATTRIBUTE_VALUE,
+    encode_json_line,
+)
 
 FIXTURES = (
     Path(__file__).parents[1] / "fixtures" / "rdaccess-v2-2da84e8496519cf23614c0cfb3ace61ee0f9cd95"
@@ -15,12 +19,30 @@ def fixture_bytes(name: str) -> bytes:
     return bytes.fromhex((FIXTURES / name).read_text())
 
 
+def pushed_dimensions(cells: int = 40, rows: int = 1) -> list[bytes]:
+    """The size the client pushes after its protocol version, as RDAccess does."""
+    return [
+        encode_json_line(MESSAGE_ATTRIBUTE_VALUE, attribute="numCells", value=cells),
+        encode_json_line(MESSAGE_ATTRIBUTE_VALUE, attribute="numCols", value=cells // rows),
+        encode_json_line(MESSAGE_ATTRIBUTE_VALUE, attribute="numRows", value=rows),
+    ]
+
+
 def test_real_braille_legacy_protocol_version_is_answered() -> None:
     sent: list[bytes] = []
     session = BrailleProtocolSession(send=sent.append)
     session.connect()
     session.feed(fixture_bytes("braille-server-protocol-version-v1.hex"))
-    assert sent == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY]
+    assert sent == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY, *pushed_dimensions()]
+
+
+def test_dimensions_are_pushed_without_a_request() -> None:
+    # A server that waits for the size, like this project's own, gets it.
+    sent: list[bytes] = []
+    session = BrailleProtocolSession(send=sent.append, num_cells=32, num_rows=1)
+    session.connect()
+    session.feed(PROTOCOL_VERSION_2_LEGACY)
+    assert sent == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY, *pushed_dimensions(32)]
 
 
 def test_braille_dimensions_are_advertised_in_json_mode() -> None:
@@ -32,8 +54,8 @@ def test_braille_dimensions_are_advertised_in_json_mode() -> None:
         session.feed(
             json.dumps({"attribute": attribute, "type": "attribute_request"}).encode() + b"\n"
         )
-    assert sent[:2] == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY]
-    assert [json.loads(payload) for payload in sent[2:]] == [
+    assert sent[:5] == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY, *pushed_dimensions()]
+    assert [json.loads(payload) for payload in sent[5:]] == [
         {"attribute": "numCells", "value": 40, "type": "attribute_value"},
         {"attribute": "numRows", "value": 1, "type": "attribute_value"},
         {"attribute": "numCols", "value": 40, "type": "attribute_value"},
@@ -49,8 +71,8 @@ def test_real_legacy_requests_during_json_transition_are_answered() -> None:
     session.feed(fixture_bytes("braille-server-num-rows-request-v1.hex")[7:])
     session.feed(fixture_bytes("braille-server-num-cols-request-v1.hex"))
     session.feed(b'{"version":2,"channel":"NVDA-BRAILLE","type":"protocol_version"}\n')
-    assert sent[:2] == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY]
-    assert [json.loads(payload) for payload in sent[2:]] == [
+    assert sent[:5] == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY, *pushed_dimensions()]
+    assert [json.loads(payload) for payload in sent[5:]] == [
         {"attribute": "numRows", "value": 1, "type": "attribute_value"},
         {"attribute": "numCols", "value": 40, "type": "attribute_value"},
     ]
@@ -63,8 +85,8 @@ def test_reconnect_recovers_when_server_sends_attribute_before_version() -> None
 
     session.feed(fixture_bytes("braille-server-num-rows-request-v1.hex"))
 
-    assert sent[:2] == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY]
-    assert json.loads(sent[2]) == {
+    assert sent[:5] == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY, *pushed_dimensions()]
+    assert json.loads(sent[5]) == {
         "attribute": "numRows",
         "value": 1,
         "type": "attribute_value",
@@ -122,7 +144,7 @@ def test_gesture_map_is_not_fabricated(caplog) -> None:
     session.connect()
     session.feed(PROTOCOL_VERSION_2_LEGACY)
     session.feed(b'{"attribute":"gestureMap","type":"attribute_request"}\n')
-    assert sent == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY]
+    assert sent == [CONNECTION_XON, PROTOCOL_VERSION_2_LEGACY, *pushed_dimensions()]
     assert "ignoring gestureMap request" in caplog.text
 
 
@@ -141,8 +163,10 @@ def test_braille_reconnect_sends_xon_and_resets_partial_json() -> None:
     assert sent == [
         CONNECTION_XON,
         PROTOCOL_VERSION_2_LEGACY,
+        *pushed_dimensions(),
         CONNECTION_XON,
         PROTOCOL_VERSION_2_LEGACY,
+        *pushed_dimensions(),
     ]
 
 
@@ -197,7 +221,8 @@ def test_braille_settings_are_empty() -> None:
     for attribute in ("supportedSettings", "setting_foo", "availableFoos"):
         session.feed(json.dumps({"attribute": attribute, "type": "attribute_request"}).encode())
         session.feed(b"\n")
-    assert [json.loads(payload)["value"] for payload in sent[2:]] == [[], None, {}]
+    assert sent[2:5] == pushed_dimensions()
+    assert [json.loads(payload)["value"] for payload in sent[5:]] == [[], None, {}]
 
 
 def test_dimensions_follow_output_and_can_be_pushed() -> None:
@@ -213,9 +238,10 @@ def test_dimensions_follow_output_and_can_be_pushed() -> None:
     session = BrailleProtocolSession(send=sent.append, output=output)
     session.connect()
     session.feed(PROTOCOL_VERSION_2_LEGACY)
+    assert sent[2:] == pushed_dimensions(40)
     output.num_cells = 80
     session.push_dimensions()
-    assert [json.loads(payload) for payload in sent[2:]] == [
+    assert [json.loads(payload) for payload in sent[5:]] == [
         {"attribute": "numCells", "value": 80, "type": "attribute_value"},
         {"attribute": "numCols", "value": 80, "type": "attribute_value"},
         {"attribute": "numRows", "value": 1, "type": "attribute_value"},

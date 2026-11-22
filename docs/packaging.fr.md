@@ -87,12 +87,14 @@ dépôt tel qu'il est, modifications non commitées comprises.
   Vérifications : l'écran de connexion local garde sa parole habituelle ;
   l'écran de connexion à distance utilise nvda-rdp ; la bibliothèque des
   canaux est chargée ; les deux canaux négocient la version 2 de RDAccess ;
-  la parole d'Orca parvient au client.
+  la parole d'Orca parvient au client ; le serveur apprend la taille de la
+  plage du client et le braille d'Orca parvient au client, qui journalise les
+  cellules (`--braille-capture`, au niveau DEBUG) au lieu d'utiliser BRLTTY.
 * Journaux : `logs/<distribution>-<commande>-<date>.log`, plus la console de
   chaque VM, en texte.
 
-Le braille de bout en bout, les cas d'échec et un vrai client Windows ne sont
-pas couverts par ces tests.
+Les touches et la saisie braille depuis la plage du client, les cas d'échec
+et un vrai client Windows ne sont pas couverts par ces tests.
 
 ### Locales et tests ignorés
 
@@ -121,7 +123,7 @@ Le PKGBUILD construit la branche par défaut du dépôt GitHub
 
 `pkgver` est calculé à partir de Git : depuis la dernière étiquette
 (`vX.Y.Z` donne `X.Y.Z.rN.gHASH`), ou, tant que le dépôt n'a pas
-d'étiquette, `0.3.0.rN.gHASH` ; changer cette valeur de repli et `pkgver=`
+d'étiquette, `0.4.0.rN.gHASH` ; changer cette valeur de repli et `pkgver=`
 ensemble. L'ancien paquet unique `nvda-rdp-linux-git` est remplacé par
 `nvda-rdp-freerdp-plugin-git` et `nvda-rdp-client-git`.
 

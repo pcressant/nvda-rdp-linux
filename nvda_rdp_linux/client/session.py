@@ -155,9 +155,13 @@ class RdAccessSession:
         self._version_sent = True
         if self._send_payload(self.legacy_protocol_version):
             LOG.info("sent legacy %s protocolVersion=2", self.KIND)
+        self._after_protocol_version()
         if self._request_versions:
             for attribute in (ATTRIBUTE_RDACCESS_VERSION, ATTRIBUTE_NVDA_VERSION):
                 self.request_attribute(attribute)
+
+    def _after_protocol_version(self) -> None:
+        """Push what RDAccess's handler pushes on connection, after the version."""
 
     # JSON messages
 

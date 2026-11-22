@@ -9,29 +9,32 @@ startup:
 step 1: {"wait_trace": {"src": "brlapi", "call": "ignoreKeys"}}
 step 2: {"connect": "braille"}
   braille <- {"hex": "11"}
-  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+  braille <- {"text": "{\"attribute\": \"supportedSettings\", \"value\": [], \"type\": \"attribute_value\"}\n"}
 step 3: {"send": "braille", "fixture": "braille-server-protocol-version-v1.hex"}
   braille <- {"hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  braille <- {"text": "{\"attribute\": \"numCells\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+  braille <- {"text": "{\"attribute\": \"numRows\", \"value\": 1, \"type\": \"attribute_value\"}\n"}
   braille <- {"text": "{\"attribute\": \"rdAccessVersion\", \"type\": \"attribute_request\"}\n"}
   braille <- {"text": "{\"attribute\": \"nvdaVersion\", \"type\": \"attribute_request\"}\n"}
-  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+  braille <- {"text": "{\"attribute\": \"supportedSettings\", \"value\": [], \"type\": \"attribute_value\"}\n"}
 step 4: {"send": "braille", "json": [{"type": "protocol_version", "version": 2, "channel": "NVDA-BRAILLE"}]}
-  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+  braille <- {"text": "{\"attribute\": \"supportedSettings\", \"value\": [], \"type\": \"attribute_value\"}\n"}
 step 5: {"focus": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
   trace {"src": "atspi", "call": "event", "args": ["window:activate", "xfreerdp", "FreeRDP: windows-remote"]}
   trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 80]}
 step 6: {"send": "braille", "json": [{"type": "display", "cells": [256, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"type": "display", "cells": [true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"type": "display", "cells": "abc"}, {"type": "display"}]}
-  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+  braille <- {"text": "{\"attribute\": \"supportedSettings\", \"value\": [], \"type\": \"attribute_value\"}\n"}
 step 7: {"send": "braille", "json": [{"type": "display", "cells": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}]}
-  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+  braille <- {"text": "{\"attribute\": \"supportedSettings\", \"value\": [], \"type\": \"attribute_value\"}\n"}
 step 8: {"send": "braille", "text": "{oops}\n"}
-  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+  braille <- {"text": "{\"attribute\": \"supportedSettings\", \"value\": [], \"type\": \"attribute_value\"}\n"}
 step 9: {"send": "braille", "hex": "42 4b 01 00 00 ff"}
-  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+  braille <- {"text": "{\"attribute\": \"supportedSettings\", \"value\": [], \"type\": \"attribute_value\"}\n"}
 step 10: {"send": "braille", "json": [{"type": "speak", "sequence": ["x"]}, {"type": "protocol_version", "version": 2, "channel": "NVDA-SPEECH"}]}
-  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+  braille <- {"text": "{\"attribute\": \"supportedSettings\", \"value\": [], \"type\": \"attribute_value\"}\n"}
 step 11: {"send": "braille", "json": [{"type": "display", "cells": [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]}]}
-  braille <- {"text": "{\"attribute\": \"numCols\", \"value\": 40, \"type\": \"attribute_value\"}\n"}
+  braille <- {"text": "{\"attribute\": \"supportedSettings\", \"value\": [], \"type\": \"attribute_value\"}\n"}
   trace {"src": "brlapi", "call": "writeDots", "args": ["ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff"]}
 shutdown:
   trace {"src": "brlapi", "call": "setParameter", "args": [1, 0, false, 0]}

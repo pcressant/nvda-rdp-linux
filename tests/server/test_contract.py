@@ -129,6 +129,15 @@ def test_braille_negotiation_attributes_cells_and_keys(braille) -> None:
     link.until(lambda: channel.ready)
     assert ready == [True]
 
+    # The client pushes its size, as RDAccess's handler does on connection.
+    link.until(lambda: len(received) == 3)
+    assert received == [
+        {"type": "attribute_value", "attribute": "numCells", "value": 40},
+        {"type": "attribute_value", "attribute": "numCols", "value": 40},
+        {"type": "attribute_value", "attribute": "numRows", "value": 1},
+    ]
+    del received[:]
+
     # The server asks for the attributes the braille bridge needs.
     for attribute in ("numCells", "gestureMap"):
         channel.send("attribute_request", attribute=attribute)
@@ -295,8 +304,9 @@ def test_a_failing_handler_keeps_the_channel(runtime: Path) -> None:
         link.until(lambda: channel.ready)
         link.send(b'{"type":"attribute_value","attribute":"fail","value":1}\n')
         link.send(b'{"type":"attribute_value","attribute":"ok","value":2}\n')
-        link.until(lambda: received)
-        assert received == [{"type": "attribute_value", "attribute": "ok", "value": 2}]
+        link.until(lambda: len(received) == 4)
+        # The client's size push comes first, then the message after the failure.
+        assert received[-1] == {"type": "attribute_value", "attribute": "ok", "value": 2}
         assert channel.ready
     finally:
         channel.stop()

@@ -1,3 +1,13 @@
+nvda-rdp-linux (0.4.0) unstable; urgency=medium
+
+  * Braille between this project's client and server: the client pushes the
+    display size after its protocol version, as RDAccess's handler does, and
+    the server asks for it when the channel is ready, as RDAccess's remote
+    braille driver does. Before, each waited for the other and Orca's
+    braille never reached a Linux client.
+
+ -- Patrick Cressant <patrick.cressant@gmail.com>  Sun, 22 Nov 2026 20:46:16 +0100
+
 nvda-rdp-linux (0.3.0) unstable; urgency=medium
 
   * New server side: NVDA on Windows, with RDAccess and mstsc, speaks and

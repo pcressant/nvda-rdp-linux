@@ -12,9 +12,11 @@ relies on the client's external behaviour, so the transcripts stay valid
 across internal refactoring.
 
 Synchronization: after a step that sends data, a barrier attribute request
-(``language`` on speech, ``numCols`` on braille) is sent as its own frame.
-The client handles one channel's frames in order, so the barrier's answer
-marks the end of that step.  Steps with asynchronous effects (focus, keys,
+(``language`` on speech, ``supportedSettings`` on braille) is sent as its own
+frame.  The client handles one channel's frames in order, so the barrier's
+answer marks the end of that step.  The barrier attribute must be one the
+client answers but never pushes on its own: the braille client pushes
+``numCells``, ``numCols`` and ``numRows`` after its protocol version.  Steps with asynchronous effects (focus, keys,
 disconnection) wait until the trace and the sockets have been quiet for
 ``SETTLE_SECONDS``.
 
@@ -54,7 +56,7 @@ STARTUP_TIMEOUT = 10.0
 STEP_TIMEOUT = 5.0
 SETTLE_SECONDS = 0.25
 CHANNELS = ("speech", "braille")
-BARRIER_ATTRIBUTE = {"speech": "language", "braille": "numCols"}
+BARRIER_ATTRIBUTE = {"speech": "language", "braille": "supportedSettings"}
 HEADER = struct.Struct("!I")
 # Order of the sources in the startup section (see the module docstring).
 STARTUP_SOURCES = ("ssip", "atspi", "brlapi")

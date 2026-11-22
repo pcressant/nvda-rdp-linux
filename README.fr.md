@@ -101,9 +101,9 @@ avec NVDA, RDAccess et `mstsc`, elle a vérifié sous NixOS la parole avec la
 lecture continue et les changements de voix d'Orca, l'affichage braille, les
 touches de la plage, la saisie braille, la reconnexion et l'écran de
 connexion à distance. Dans ce dépôt, les tests système dans des VM NixOS,
-Arch Linux et Debian forky vérifient, de Linux à Linux, que la parole d'Orca
-sur l'écran de connexion à distance parvient au client et que l'écran de
-connexion local n'est pas modifié. Des essais manuels depuis Windows, avec
+Arch Linux et Debian forky vérifient, de Linux à Linux, que la parole et le
+braille d'Orca sur l'écran de connexion à distance parviennent au client et
+que l'écran de connexion local n'est pas modifié. Des essais manuels depuis Windows, avec
 NVDA, RDAccess et `mstsc`, braille compris, ont réussi avec les paquets de ce
 dépôt sous NixOS (`services.nvda-rdp-server`), Arch Linux et Debian forky.
 

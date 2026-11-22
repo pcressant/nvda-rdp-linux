@@ -27,12 +27,13 @@ NixOS VM with an unmodified GNOME Remote Desktop, the following were verified:
 In this repository, with the packages built here, the system tests check from
 Linux to Linux, in VMs of NixOS, Arch Linux and Debian forky: the local login
 screen keeps its speech, the remote login screen is served, both channels
-negotiate RDAccess version 2, and Orca's speech reaches the client's Speech
-Dispatcher. Manual tests from Windows with NVDA, RDAccess and `mstsc`,
+negotiate RDAccess version 2, Orca's speech reaches the client's Speech
+Dispatcher, and Orca's braille reaches the client at the client's display
+size (the client logs the cells instead of using BRLTTY). Manual tests from Windows with NVDA, RDAccess and `mstsc`,
 braille included, passed with these packages on NixOS (the
 `services.nvda-rdp-server` module, on the study's VM), Arch Linux and Debian
-forky. Braille end to end and failure cases are not covered by the automated
-tests.
+forky. Braille keys and typing from the client's display, and failure cases,
+are not covered by the automated tests.
 
 ## Requirements
 

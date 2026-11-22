@@ -9,7 +9,10 @@
 # The client connects to the server's remote login screen. Orca speaks there
 # through the nvda-rdp Speech Dispatcher of the greeter session, the channel
 # library in GNOME Remote Desktop, the RDP connection, the plugin and the
-# client, and its text must reach the client's Speech Dispatcher. The local
+# client, and its text must reach the client's Speech Dispatcher. Orca's
+# braille goes the same way through the nvda-rdp BrlAPI server: the server
+# must learn the client's display size and the client must receive cells that
+# are not blank (it only logs them: --braille-capture, at DEBUG). The local
 # login screen of the server must keep its usual speech.
 #
 # The RDP credentials are a fixture of these throwaway VMs; they are only
@@ -205,11 +208,15 @@ in
               "test -S /run/user/${toString alice.uid}/speech-dispatcher/speechd.sock"
           )
           # Speech Dispatcher also loads its usual modules: name the recorder.
-          options = "NVDA_RDP_OPTIONS=--output-module=recorder"
-          client.succeed(
-              "su - ${alice.name} -c 'mkdir -p ~/.config/nvda-rdp-linux &&"
-              f" echo {options} > ~/.config/nvda-rdp-linux/environment'"
+          # Braille cells are only logged, at DEBUG: the client has no BRLTTY.
+          options = (
+              "NVDA_RDP_OPTIONS='--output-module=recorder --braille-capture --log-level DEBUG'"
           )
+          setup = (
+              "mkdir -p ~/.config/nvda-rdp-linux"
+              f" && echo {shlex.quote(options)} > ~/.config/nvda-rdp-linux/environment"
+          )
+          client.succeed(f"su - ${alice.name} -c {shlex.quote(setup)}")
           client.succeed("${inUser "start nvda-rdp-client.service"}")
           wait_or_dump(
               client,
@@ -277,6 +284,29 @@ in
 
           retry(tab_and_check, timeout_seconds=120)
           print(client.succeed(f"cat {record}"))
+
+      with subtest("Orca's braille reaches the client"):
+          # The size is pushed by the client and asked for by the server.
+          wait_or_dump(
+              server,
+              journal_has("nvda-rdp-brlapi-server", "client display: 40 cells"),
+              ["nvda-rdp-brlapi.service"],
+              60,
+          )
+          # A display message with at least one raised dot.
+          shown = (
+              "journalctl -t nvda-rdp-client -o cat | grep -Eq"
+              " 'braille display 40 cells: .*([1-9a-f][0-9a-f]|0[1-9a-f])'"
+          )
+
+          def tab_and_check_braille(_):
+              client.send_key("tab")
+              return client.execute(shown)[0] == 0
+
+          retry(tab_and_check_braille, timeout_seconds=120)
+          print(client.succeed(
+              "journalctl -t nvda-rdp-client -o cat | grep 'braille display' | tail -n 3"
+          ))
 
       with subtest("Logs"):
           print(server.execute("sh ${./server-state.sh} 2>&1")[1])

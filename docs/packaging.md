@@ -75,12 +75,15 @@ uncommitted changes included.
   records what it is asked to speak. The client connects to the remote login
   screen. Checks: the local login screen keeps its usual speech; the remote
   login screen uses nvda-rdp; the channel library is loaded; both channels
-  negotiate RDAccess version 2; Orca's speech reaches the client.
+  negotiate RDAccess version 2; Orca's speech reaches the client; the server
+  learns the client's display size and Orca's braille reaches the client,
+  which logs the cells (`--braille-capture`, at DEBUG) instead of using
+  BRLTTY.
 * Logs: `logs/<distribution>-<command>-<date>.log`, plus each VM's console,
   as text.
 
-Braille end to end, failure cases and a real Windows client are not covered
-by these tests.
+Braille keys and typing from the client's display, failure cases and a real
+Windows client are not covered by these tests.
 
 ### Locales and skipped tests
 
@@ -107,7 +110,7 @@ The PKGBUILD builds the default branch of the GitHub repository
    `nvda-rdp-linux-git` and push it.
 
 `pkgver` is computed from Git: from the latest tag (`vX.Y.Z` gives
-`X.Y.Z.rN.gHASH`), or, while the repository has no tag, `0.3.0.rN.gHASH`; bump
+`X.Y.Z.rN.gHASH`), or, while the repository has no tag, `0.4.0.rN.gHASH`; bump
 that fallback and `pkgver=` together. The old single package
 `nvda-rdp-linux-git` is replaced by `nvda-rdp-freerdp-plugin-git` and
 `nvda-rdp-client-git`.

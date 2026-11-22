@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(nvda-rdp-dvc VERSION 0.3.0 LANGUAGES C)
+project(nvda-rdp-dvc VERSION 0.4.0 LANGUAGES C)
 
 include(GNUInstallDirs)
 

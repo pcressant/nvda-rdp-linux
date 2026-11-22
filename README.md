@@ -92,8 +92,8 @@ Windows with NVDA, RDAccess and `mstsc`, speech with say all and Orca's voice
 changes, braille output, display keys, braille typing, reconnection and the
 remote login screen were verified on NixOS. In this repository, the system
 tests in VMs of NixOS, Arch Linux and Debian forky check, from Linux to Linux,
-that Orca's speech on the remote login screen reaches the client and that the
-local login screen is unchanged. Manual tests from Windows with NVDA,
+that Orca's speech and braille on the remote login screen reach the client
+and that the local login screen is unchanged. Manual tests from Windows with NVDA,
 RDAccess and `mstsc`, braille included, passed with this repository's
 packages on NixOS (`services.nvda-rdp-server`), Arch Linux and Debian forky.
 

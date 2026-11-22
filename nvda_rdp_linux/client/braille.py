@@ -83,6 +83,13 @@ class BrailleProtocolSession(RdAccessSession):
             return self._num_cells, self._num_rows
         return self._output.num_cells, self._output.num_rows
 
+    def _after_protocol_version(self) -> None:
+        # RDAccess's handler pushes the size on connection, right after its
+        # protocol version (rdAccess@19f5c53: addon/globalPlugins/rdAccess/
+        # handlers/_remoteHandler.py:78-82, remoteBrailleHandler.py:137-145):
+        # a server that only waits for it gets it without asking.
+        self.push_dimensions()
+
     def push_dimensions(self) -> None:
         """Announce a new display size, like ``_handleDisplayDimensionChanges``."""
         for attribute in (ATTRIBUTE_NUM_CELLS, ATTRIBUTE_NUM_COLS, ATTRIBUTE_NUM_ROWS):

@@ -349,6 +349,13 @@ peut manquer l'unité d'un processus bref. Les lignes des utilisateurs des
   Ctrl, Alt et Windows. Ceux qui utilisent la touche NVDA, comme les
   autres scripts NVDA, sont sans effet ; le journal les nomme une fois
   chacun.
+* Le serveur BrlAPI rend chaque écriture comme une ligne entière : il ne
+  conserve pas la ligne d'une écriture à l'autre comme le fait BRLTTY. Une
+  écriture limitée à une région efface donc le reste de la ligne, et le
+  masque d'attributs `AND` est ignoré. Orca écrit toujours la ligne
+  entière, avec au plus un masque `OR` : cela ne change rien avec Orca, et
+  ne compterait que pour un autre client BrlAPI. C'est laissé tel quel pour
+  ne pas modifier un rendu qui fonctionne.
 * Orca gère une seule ligne braille. Une plage de plusieurs rangées lui est
   présentée comme une ligne de toutes ses cellules, remplie rangée après
   rangée, comme RDAccess les envoie.

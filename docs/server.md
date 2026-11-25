@@ -324,6 +324,12 @@ system journal; read them as root.
   `kb:` keys, braille typing, and the modifier toggles for Shift, Control,
   Alt and Windows. The toggles with the NVDA key, and the other NVDA
   scripts, do nothing; the log names each of them once.
+* The BrlAPI server renders each write as a whole line: it does not keep
+  the line between writes as BRLTTY does, so a write limited to a region
+  blanks the rest of the line, and the `AND` attribute mask is ignored.
+  Orca always writes the whole line, with an `OR` mask at most, so this
+  makes no difference with Orca; it would only matter for another BrlAPI
+  client. It is left as is so as not to change a rendering that works.
 * Orca handles one braille line. A display of several rows is offered as
   one line of all its cells, filled row after row, as RDAccess sends them.
 * Say all stops on a disconnection.

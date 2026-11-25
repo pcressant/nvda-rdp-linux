@@ -41,6 +41,12 @@ style "icon" (``cap_let_recogn=icon``), a capital letter spoken alone is
 preceded by NVDA's tone for capitals once NVDA begins it.  Orca's own sounds
 are played in the session and heard through RDP's audio.
 
+Within a message, SSML's ``xml:lang`` (on ``s``, ``p``, ``voice``, ``lang``
+and the like, not on ``speak``: the message's language is a setting) and
+``<break time=.../>`` become NVDA's language changes and breaks, when NVDA
+reports supporting them; the language goes back to the enclosing one at the
+closing tag.  Orca does not send them, other clients may.
+
 Every message sent to NVDA starts with the per-utterance commands of
 ``prosody`` (Orca's voice changes relative to its default voice, language)
 and ends with commands back to NVDA's defaults; ``NVDA_RDP_PROSODY=0`` in the
@@ -75,26 +81,36 @@ from ..common.speech import (
     ATTRIBUTE_LANGUAGE,
     ATTRIBUTE_SUPPORTED_COMMANDS,
     CHANNEL_NAME,
+    COMMAND_BREAK,
     COMMAND_INDEX,
+    COMMAND_LANG_CHANGE,
     DRIVER_TYPE,
     MESSAGE_CANCEL,
     MESSAGE_INDEX,
     MESSAGE_SPEAK,
     MESSAGE_TONE,
     MESSAGE_WAVE,
+    lang_change_command,
 )
 from .channel import Channel
 from .driver_settings import Choice, DriverSettings
 from .input_time import InputTime
 from .orca_speech import OrcaSpeech
-from .prosody import NEUTRAL, prosody_commands, reset_commands
+from .prosody import NEUTRAL, nvda_language, prosody_commands, reset_commands
 from .settings_service import SettingsService
 
 LOG = logging.getLogger(__name__)
 
 SOCKET_NAME = "nvda-speech.sock"
 PROSODY_ENV = "NVDA_RDP_PROSODY"
-_MARK_OR_TAG = re.compile(r"<mark\s+name\s*=\s*\"([^\"]*)\"\s*/>|<[^>]*>")
+_MARK_OR_TAG = re.compile(
+    r"<mark\s+name\s*=\s*\"([^\"]*)\"\s*/>"
+    r"|<(/?)([A-Za-z][\w:.-]*)((?:[^>\"']|\"[^\"]*\"|'[^']*')*)>"
+    r"|<[^>]*>"
+)
+_ATTRIBUTE = re.compile(r"([\w:.-]+)\s*=\s*(?:\"([^\"]*)\"|'([^']*)')")
+_BREAK_TIME = re.compile(r"\s*(\d+(?:\.\d+)?)\s*(ms|s)\s*", re.IGNORECASE)
+_MAX_BREAK_MS = 10000
 _FIRST_INDEX = 1
 _MAX_INDEX = 1 << 30
 # If NVDA does not report the index placed before the text within this delay,
@@ -131,16 +147,63 @@ VOICE_SETTING = "voice"
 GENERIC_VOICE = "NVDA"
 
 
-def parse_ssml(text: str) -> list[tuple[str, str]]:
-    """Return ``("text", s)`` and ``("mark", name)`` items; other tags are dropped."""
-    items: list[tuple[str, str]] = []
+def break_time(value: str | None) -> int | None:
+    """SSML's ``500ms`` or ``1.5s`` in milliseconds, at most 10 s."""
+    match = _BREAK_TIME.fullmatch(value or "")
+    if match is None:
+        return None
+    number = float(match.group(1)) * (1000 if match.group(2).lower() == "s" else 1)
+    return min(round(number), _MAX_BREAK_MS)
+
+
+def parse_ssml(text: str) -> list[tuple[str, Any]]:
+    """Return ``("text", s)``, ``("mark", name)``, ``("lang", language or None)``
+    and ``("break", ms)`` items; other tags are dropped.
+
+    ``("lang", None)`` goes back to the message's own language.
+    """
+    items: list[tuple[str, Any]] = []
+    # Open elements: (name, the language they set, or None).
+    stack: list[tuple[str, str | None]] = []
+
+    def language() -> str | None:
+        return next((lang for _name, lang in reversed(stack) if lang), None)
+
     pos = 0
     for match in _MARK_OR_TAG.finditer(text):
         if match.start() > pos:
             items.append(("text", html.unescape(text[pos : match.start()])))
+        pos = match.end()
         if match.group(1) is not None:
             items.append(("mark", match.group(1)))
-        pos = match.end()
+            continue
+        name = match.group(3)
+        if name is None:
+            continue
+        name = name.lower()
+        rest = match.group(4) or ""
+        attributes = {
+            key.lower(): html.unescape(double or single)
+            for key, double, single in _ATTRIBUTE.findall(rest)
+        }
+        if match.group(2):  # Closing tag.
+            if not any(open_name == name for open_name, _lang in stack):
+                continue
+            before = language()
+            while stack and stack.pop()[0] != name:
+                pass
+            if language() != before:
+                items.append(("lang", language()))
+        elif name == "break":
+            time = break_time(attributes.get("time"))
+            if time is not None:
+                items.append(("break", time))
+        elif not rest.rstrip().endswith("/"):
+            lang = attributes.get("xml:lang") if name != "speak" else None
+            before = language()
+            stack.append((name, lang or None))
+            if language() != before:
+                items.append(("lang", language()))
     if pos < len(text):
         items.append(("text", html.unescape(text[pos:])))
     return items
@@ -402,14 +465,30 @@ class Module:
         before, after = self._prosody()
         sequence: list[object] = [_index(message.begin), *before]
         items = parse_ssml(text) if kind == "SPEAK" else [("text", text)]
+        supported = self.channel.attributes.get(ATTRIBUTE_SUPPORTED_COMMANDS)
+        supported = set(supported) if isinstance(supported, list) else set()
+        # Back from an inner language: the message's, else NVDA's default.
+        message_language = next(
+            (command for command in before if command[0] == COMMAND_LANG_CHANGE),
+            lang_change_command(None),
+        )
+        inner: list[list[object]] = []
         for item_kind, value in items:
             if item_kind == "text":
                 if value:
                     sequence.append(value)
-            else:
+            elif item_kind == "mark":
                 index = self._new_index()
                 message.marks[index] = value
                 sequence.append(_index(index))
+            elif item_kind == "lang" and COMMAND_LANG_CHANGE in supported:
+                command = lang_change_command(nvda_language(value)) if value else message_language
+                inner.append(command)
+                sequence.append(command)
+            elif item_kind == "break" and COMMAND_BREAK in supported:
+                sequence.append([COMMAND_BREAK, {"time": value}])
+        if inner and not any(command[0] == COMMAND_LANG_CHANGE for command in after):
+            after = [*after, *reset_commands(inner)]
         message.capital = self._capital_icon(kind, items)
         message.end = self._new_index()
         sequence.extend(after)

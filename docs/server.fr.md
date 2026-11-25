@@ -295,6 +295,12 @@ connecté, sa session est servie de la même façon.
     à partir de là.
   * une icône sonore nommée comme un des sons de NVDA (`error`, `start`,
     `browseMode`...) le joue sur NVDA ; les autres noms jouent un bip court.
+  * le `xml:lang` du SSML à l'intérieur d'un message (sur `s`, `p`, `voice`,
+    `lang`...) change la langue de NVDA jusqu'à la balise fermante, et
+    `<break time="500ms"/>` fait une pause dans NVDA, quand le synthétiseur
+    de NVDA les prend en charge. Comme pour les changements de langue
+    d'Orca, NVDA n'applique une langue que si son changement automatique de
+    langue est activé.
 * Avec le style de majuscules « Icône » d'Orca, une majuscule lue seule est
   précédée du bip des majuscules de NVDA. Les autres sons d'Orca (sons des
   rôles, bips des barres de progression) sont joués dans la session et

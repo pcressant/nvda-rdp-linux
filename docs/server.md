@@ -276,6 +276,11 @@ NVDA; once the user has logged in, the session is served the same way.
     from there.
   * a sound icon named like one of NVDA's sounds (`error`, `start`,
     `browseMode`...) plays it on NVDA; other names play a short tone.
+  * SSML's `xml:lang` within a message (on `s`, `p`, `voice`, `lang`...)
+    switches NVDA's language until the closing tag, and `<break time="500ms"/>`
+    pauses NVDA, when NVDA's synthesizer supports them. As for Orca's
+    language changes, NVDA applies a language only with its automatic
+    language switching on.
 * With Orca's capitalization style "Icon", a capital letter read alone is
   preceded by NVDA's tone for capitals. Orca's other sounds (role sounds,
   progress bar beeps) are played in the session and heard through RDP's

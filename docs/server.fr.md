@@ -289,6 +289,10 @@ connecté, sa session est servie de la même façon.
 
   Sans cette autorisation, Orca propose une seule voix, `NVDA`, et la
   commande indique que NVDA ne signale aucun réglage.
+* Les autres clients de Speech Dispatcher de la session, comme `spd-say`,
+  parlent aussi par NVDA. Orca ne se sert pas de ce qui suit, eux si :
+  * une pause s'arrête à la fin de la phrase en cours, et la parole reprend
+    à partir de là.
 * Le clavier ordinaire et l'audio sont ceux de RDP.
 * Si `mstsc` est fermé, la session reste ouverte ; une nouvelle connexion au
   même compte la rejoint.

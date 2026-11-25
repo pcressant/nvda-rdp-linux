@@ -23,6 +23,15 @@ If NVDA does not report the index placed before the text within 2 s (the
 client machine idle or locked), the message is ended so that Speech
 Dispatcher does not wait for ever.
 
+PAUSE stops at the next of the ``__spd_`` marks that Speech Dispatcher puts
+between sentences, as it asks of its modules: on resume, it sends the text
+again from the last mark reported (speechd@0d80cd8:
+doc/speech-dispatcher.texi, "module_pause"; src/server/speaking.c,
+reload_message).  NVDA is told to cancel once that mark is reached, or at
+once when no such mark is left or none comes within 1.5 s.  RDAccess's
+``pause_speech`` is not used: NVDA would then also resume the text that
+Speech Dispatcher sends again.
+
 Every message sent to NVDA starts with the per-utterance commands of
 ``prosody`` (Orca's voice changes relative to its default voice, language)
 and ends with commands back to NVDA's defaults; ``NVDA_RDP_PROSODY=0`` in the
@@ -80,6 +89,9 @@ _MAX_INDEX = 1 << 30
 # If NVDA does not report the index placed before the text within this delay,
 # the message is ended so that Speech Dispatcher does not wait for ever.
 _BEGIN_TIMEOUT_MS = 2000
+# A pause waits this long for the next mark, then stops where NVDA is.
+_PAUSE_TIMEOUT_MS = 1500
+_PAUSE_MARK_PREFIX = "__spd_"
 VOICE_SETTING = "voice"
 GENERIC_VOICE = "NVDA"
 
@@ -128,6 +140,13 @@ class _Message:
     end: int = 0
     marks: dict[int, str] = field(default_factory=dict)
     began: bool = False
+    marks_reached: int = 0
+    pausing: bool = False
+
+    def pause_mark_ahead(self) -> bool:
+        """Whether a mark Speech Dispatcher can resume from is still to come."""
+        ahead = list(self.marks.values())[self.marks_reached :]
+        return any(name.startswith(_PAUSE_MARK_PREFIX) for name in ahead)
 
 
 class Module:
@@ -219,7 +238,7 @@ class Module:
         elif line == "STOP":
             self._stop(703, "STOP")
         elif line == "PAUSE":
-            self._stop(704, "PAUSE")
+            self._pause()
         elif line.startswith("LIST VOICES"):
             self._list_voices()
         elif line.startswith("DEBUG"):
@@ -409,7 +428,11 @@ class Module:
             current.began = True
             self._out("701 BEGIN")
         elif index in current.marks:
-            self._out(f"700-{current.marks[index]}\n700 INDEX MARK")
+            current.marks_reached += 1
+            name = current.marks[index]
+            self._out(f"700-{name}\n700 INDEX MARK")
+            if current.pausing and name.startswith(_PAUSE_MARK_PREFIX):
+                self._stop(704, "PAUSE")
         elif index == current.end:
             if not current.began:
                 self._out("701 BEGIN")
@@ -431,6 +454,27 @@ class Module:
             LOG.info("NVDA detached while speaking")
             self._current = None
             self._out("703 STOP")
+
+    def _pause(self) -> None:
+        current = self._current
+        if (
+            current is None
+            or current.via != "nvda"
+            or current.pausing
+            or not current.began
+            or not current.pause_mark_ahead()
+        ):
+            self._stop(704, "PAUSE")
+            return
+        LOG.debug("PAUSE: stopping at the next sentence mark")
+        current.pausing = True
+        GLib.timeout_add(_PAUSE_TIMEOUT_MS, self._check_pause, current)
+
+    def _check_pause(self, message: _Message) -> bool:
+        if self._current is message:
+            LOG.debug("PAUSE: no mark within %d ms, stopping", _PAUSE_TIMEOUT_MS)
+            self._stop(704, "PAUSE")
+        return GLib.SOURCE_REMOVE
 
     def _stop(self, code: int, name: str) -> None:
         current = self._current

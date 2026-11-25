@@ -1,0 +1,185 @@
+{
+  "description": "PAUSE while NVDA speaks stops at the next of Speech Dispatcher's sentence marks (__spd_), not at Orca's marks; without such a mark within 1.5 s, or with none left, NVDA is cancelled at once.",
+  "component": "speechd",
+  "steps": [
+    {
+      "accept": "speech"
+    },
+    {
+      "send": "speech",
+      "hex": "11"
+    },
+    {
+      "send": "speech",
+      "hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "attribute": "supportedCommands",
+          "value": [
+            "BreakCommand",
+            "CharacterModeCommand",
+            "IndexCommand",
+            "LangChangeCommand",
+            "PitchCommand",
+            "RateCommand",
+            "VolumeCommand"
+          ],
+          "type": "attribute_value"
+        },
+        {
+          "attribute": "language",
+          "value": "fr_FR",
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "module": [
+        "INIT"
+      ]
+    },
+    {
+      "module": [
+        "AUDIO",
+        "audio_output_method=libao",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "LOGLEVEL",
+        "log_level=3",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SET",
+        "rate=0",
+        "pitch=0",
+        "pitch_range=0",
+        "volume=0",
+        "punctuation_mode=some",
+        "spelling_mode=off",
+        "cap_let_recogn=none",
+        "language=fr-FR",
+        "synthesis_voice=NULL",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SPEAK",
+        "<speak><mark name=\"0:4\"/>Une.<mark name=\"__spd_1\"/><mark name=\"5:4\"/>Deux.<mark name=\"__spd_2\"/>Trois.</speak>",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 1,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 2,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "module": [
+        "PAUSE"
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 3,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 4,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 0,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "module": [
+        "SPEAK",
+        "<speak><mark name=\"5:4\"/>Deux.<mark name=\"__spd_2\"/>Trois.</speak>",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 7,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "module": [
+        "PAUSE"
+      ]
+    },
+    {
+      "sleep": 1.8
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 0,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "module": [
+        "SPEAK",
+        "<speak>Trois.</speak>",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 11,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "module": [
+        "PAUSE"
+      ]
+    }
+  ]
+}

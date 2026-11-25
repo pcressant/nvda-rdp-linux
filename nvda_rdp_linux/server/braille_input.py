@@ -135,6 +135,9 @@ class BrailleInput:
         self._bindings = bindings
         LOG.info("gesture map from the client: %d gestures", len(bindings))
 
+    def clear_gesture_map(self) -> None:
+        self._bindings = {}
+
     def _lookup(self, message: dict[str, Any]) -> str | None:
         identifiers = []
         source, gesture_id = message.get("source"), message.get("id")

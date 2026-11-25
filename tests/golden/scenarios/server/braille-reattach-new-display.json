@@ -1,0 +1,171 @@
+{
+  "description": "Braille: a new attach forgets the display size and gesture map of the previous client; nothing is shown before the new size, and the old map no longer applies.",
+  "component": "brlapi",
+  "steps": [
+    {
+      "accept": "braille"
+    },
+    {
+      "send": "braille",
+      "hex": "11"
+    },
+    {
+      "send": "braille",
+      "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "numCells",
+          "value": 40,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "connect"
+    },
+    {
+      "orca": "enter"
+    },
+    {
+      "orca": "accept_commands"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "gestureMap",
+          "value": [
+            "GlobalGestureMap",
+            {
+              "globalCommands.GlobalCommands": {
+                "braille_nextLine": "br(brltty):lndn"
+              }
+            }
+          ],
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "write",
+      "text": "un"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "lndn",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "hex": "13"
+    },
+    {
+      "send": "braille",
+      "hex": "11"
+    },
+    {
+      "send": "braille",
+      "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "orca": "write",
+      "text": "deux"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "lndn",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "orca": "keys"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "numCells",
+          "value": 20,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "write",
+      "text": "perdu"
+    },
+    {
+      "orca": "connect"
+    },
+    {
+      "orca": "enter"
+    },
+    {
+      "orca": "accept_commands"
+    },
+    {
+      "orca": "write",
+      "text": "trois"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "gestureMap",
+          "value": [
+            "GlobalGestureMap",
+            {
+              "globalCommands.GlobalCommands": {
+                "braille_previousLine": "br(brltty):lnup"
+              }
+            }
+          ],
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "lnup",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "lndn",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "orca": "keys"
+    }
+  ]
+}

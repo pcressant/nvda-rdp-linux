@@ -90,6 +90,7 @@ class Channel:
         self._got_xon = False
         self._json_mode = False
         self.ready = False
+        # What the attached client reported; cleared when it attaches or detaches.
         self.attributes: dict[str, Any] = {}
         # time.monotonic() of the client's last XON, None while detached.
         self.attached_at: float | None = None
@@ -151,6 +152,7 @@ class Channel:
             LOG.info("%s: channel closed", self.name)
         got_xon = self._got_xon
         self.attached_at = None
+        self.attributes.clear()
         self._set_ready(False)
         if retry:
             self._schedule_retry(RETRY_SECONDS if got_xon else RETRY_SECONDS_NO_CLIENT)
@@ -224,6 +226,7 @@ class Channel:
                 else:
                     LOG.info("%s: RDAccess client detached", self.name)
                     self.attached_at = None
+                    self.attributes.clear()
                     self._json_mode = False
                     self._set_ready(False)
             elif isinstance(item, LegacyFrame):
@@ -237,6 +240,8 @@ class Channel:
         LOG.info("%s: RDAccess client attached", self.name)
         self._got_xon = True
         self.attached_at = time.monotonic()
+        # A new attach may be another client: forget what the last one reported.
+        self.attributes.clear()
         self._json_mode = False
         self._set_ready(False)
         self._send_payload(legacy_protocol_version_frame(self._driver_type))

@@ -170,7 +170,10 @@ class BrailleBridge:
 
     def _on_ready(self, ready: bool) -> None:
         if not ready:
+            # The next client may have another display: wait for its size and map.
+            self._num_cells = 0
             self._last_cells = None
+            self.input.clear_gesture_map()
             return
         # Ask for the size, as RDAccess's remote braille driver does on init
         # (rdAccess@19f5c53: addon/brailleDisplayDrivers/remote.py:28-32):

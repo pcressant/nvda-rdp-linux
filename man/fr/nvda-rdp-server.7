@@ -201,10 +201,15 @@ première ouverte décide. Une nouvelle connexion à distance au même compte
 rejoint sa session existante.
 .PP
 Seules les différences avec la voix par défaut d'Orca parviennent à NVDA ; le
-choix de synthétiseur et de voix d'Orca n'y a pas d'effet. Un changement de
+choix de synthétiseur d'Orca n'y a pas d'effet. Le choix de voix d'Orca change
+la voix de NVDA, et
+.BR nvda\-rdp\-settings (1)
+change les réglages des pilotes de NVDA, seulement si la gestion des
+paramètres du pilote est autorisée dans RDAccess sur le client. Un changement de
 taille de la plage coûte une reconnexion d'environ 2 secondes.
 .SH VOIR AUSSI
 .BR nvda\-rdp\-client (1),
+.BR nvda\-rdp\-settings (1),
 .BR grdctl (1),
 .BR orca (1),
 .BR speech\-dispatcher (1),

@@ -37,6 +37,8 @@ in
     # GNOME Remote Desktop) are plain files of the package, as on other
     # distributions.
     systemd.packages = [ cfg.package ];
+    # nvda-rdp-settings and its man pages.
+    environment.systemPackages = [ cfg.package ];
 
     systemd.user.units."nvda-rdp-server-session.service" = lib.mkIf (!cfg.loginScreen) {
       overrideStrategy = "asDropin";

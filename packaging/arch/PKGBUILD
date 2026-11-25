@@ -175,6 +175,7 @@ package_nvda-rdp-server-git() {
   (
     cd packaging/server
     DESTDIR="$pkgdir" \
+      BINDIR=/usr/bin \
       LIBEXECDIR=/usr/lib/nvda-rdp-linux \
       PKGLIBDIR=/usr/lib/nvda-rdp-linux \
       PKGDATADIR=/usr/share/nvda-rdp-linux \
@@ -185,5 +186,6 @@ package_nvda-rdp-server-git() {
       sh install.sh
   )
   _install_man nvda-rdp-server.7
+  _install_man nvda-rdp-settings.1
   install -Dm644 docs/server.md docs/server.fr.md -t "$pkgdir/usr/share/doc/$_pkgname"
 }

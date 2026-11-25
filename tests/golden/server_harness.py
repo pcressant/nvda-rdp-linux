@@ -85,6 +85,7 @@ IMPLEMENTATIONS: dict[str, dict[str, Any]] = {
         "pythonpath": [REPOSITORY],
         "brlapi": ["-m", "nvda_rdp_linux.server.brlapi_main"],
         "speechd": ["-m", "nvda_rdp_linux.server.speechd_main"],
+        "settings": ["-m", "nvda_rdp_linux.server.settings_cli"],
         "framing": "frames",
         "socket_dir": "gnome-remote-desktop",
         "sockets": {"speech": "nvda-speech.sock", "braille": "nvda-braille.sock"},
@@ -411,6 +412,27 @@ class ServerRun:
                     raise HarnessError("BrlAPI server did not start")
                 time.sleep(0.02)
 
+    def run_settings(self, args: list[str]) -> list[dict[str, Any]]:
+        """Run nvda-rdp-settings; its exit status and output lines."""
+        if "settings" not in self.impl:
+            raise HarnessError("this implementation has no nvda-rdp-settings")
+        environment = self._base_environment()
+        environment["PYTHONPATH"] = os.pathsep.join(
+            [*map(str, self.impl["pythonpath"]), os.environ.get("PYTHONPATH", "")]
+        )
+        done = subprocess.run(
+            [sys.executable, *self.impl["settings"], *args],
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=STEP_TIMEOUT + 10,
+            check=False,
+        )
+        output: list[dict[str, Any]] = [{"returncode": done.returncode}]
+        output += [{"stdout": line} for line in done.stdout.splitlines()]
+        output += [{"stderr": line} for line in done.stderr.splitlines()]
+        return output
+
     def stop(self) -> int | None:
         if self.orca is not None:
             self.orca.close()
@@ -525,6 +547,7 @@ def _payloads(step: dict[str, Any]) -> list[bytes]:
 
 def _run_step(run: ServerRun, step: dict[str, Any]) -> dict[str, Any]:
     result: dict[str, Any] = {}
+    settings_output: list[dict[str, Any]] = []
     if "accept" in step:
         if not run.peers[step["accept"]].accept(step.get("timeout", STEP_TIMEOUT)):
             result["accept_timeout"] = True
@@ -543,12 +566,16 @@ def _run_step(run: ServerRun, step: dict[str, Any]) -> dict[str, Any]:
             control.write(json.dumps(step["dbus"]) + "\n")
         if not run.wait_trace({"src": "dbus", "call": "changed"}, step.get("count", 1)):
             result["wait_timeout"] = True
+    elif "settings" in step:
+        settings_output = run.run_settings(step["settings"])
     elif "sleep" in step:
         time.sleep(step["sleep"])
     elif "settle" not in step:
         raise HarnessError(f"unknown step: {step}")
     run.settle()
     received = run.received()
+    if settings_output:
+        received["settings"] = settings_output
     if received:
         result["received"] = received
     trace = run.new_trace()

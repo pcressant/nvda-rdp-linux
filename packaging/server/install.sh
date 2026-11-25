@@ -7,6 +7,7 @@
 #
 # Usage: install.sh, run from this directory, with these variables set:
 #   DESTDIR            staging root (empty for a direct install)
+#   BINDIR             user commands, e.g. /usr/bin
 #   LIBEXECDIR         helper programs, e.g. /usr/lib/nvda-rdp-linux
 #   PKGLIBDIR          directory of libnvda-rdp-grd-preload.so
 #   PKGDATADIR         e.g. /usr/share/nvda-rdp-linux
@@ -16,7 +17,7 @@
 #   SESSION_PATH       PATH of nvda-rdp-server-session (loginctl, coreutils)
 set -eu
 
-for name in LIBEXECDIR PKGLIBDIR PKGDATADIR USERUNITDIR PYTHON SPEECH_DISPATCHER SESSION_PATH; do
+for name in BINDIR LIBEXECDIR PKGLIBDIR PKGDATADIR USERUNITDIR PYTHON SPEECH_DISPATCHER SESSION_PATH; do
   eval "value=\${$name:-}"
   if [ -z "$value" ]; then
     echo "install.sh: $name is not set" >&2
@@ -44,6 +45,7 @@ expand() {
 for program in nvda-rdp-server-session nvda-rdp-brlapi-server nvda-rdp-speechd-module; do
   expand "$program.in" "$DESTDIR$LIBEXECDIR/$program" 755
 done
+expand nvda-rdp-settings.in "$DESTDIR$BINDIR/nvda-rdp-settings" 755
 expand speechd.conf.in "$DESTDIR$PKGDATADIR/speechd/speechd.conf" 644
 for unit in nvda-rdp-server-session nvda-rdp-brlapi nvda-rdp-speechd; do
   expand "systemd/$unit.service.in" "$DESTDIR$USERUNITDIR/$unit.service" 644

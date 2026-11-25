@@ -1,0 +1,197 @@
+{
+  "description": "Driver settings of NVDA's synthesizer: NVDA pushes its settings, the module asks their values; NVDA's voices are the module's voices, and Orca's choice, made before they were known, changes NVDA's voice once they are; nvda-rdp-settings lists, reads and changes them.",
+  "component": "speechd",
+  "steps": [
+    {
+      "accept": "speech"
+    },
+    {
+      "send": "speech",
+      "hex": "11"
+    },
+    {
+      "send": "speech",
+      "hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "module": [
+        "INIT"
+      ]
+    },
+    {
+      "module": [
+        "SET",
+        "rate=0",
+        "language=fr-FR",
+        "synthesis_voice=Microsoft Zira - English (United States)",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "attribute": "supportedSettings",
+          "value": [
+            [
+              "DriverSetting",
+              {
+                "id": "voice",
+                "displayNameWithAccelerator": "&Voix",
+                "displayName": "Voix",
+                "availableInSettingsRing": true,
+                "defaultVal": null,
+                "useConfig": false
+              }
+            ],
+            [
+              "NumericDriverSetting",
+              {
+                "id": "rate",
+                "displayNameWithAccelerator": "&Débit",
+                "displayName": "Débit",
+                "availableInSettingsRing": true,
+                "defaultVal": 50,
+                "useConfig": false,
+                "minVal": 0,
+                "maxVal": 100,
+                "minStep": 1,
+                "normalStep": 5,
+                "largeStep": 10
+              }
+            ],
+            [
+              "BooleanDriverSetting",
+              {
+                "id": "rateBoost",
+                "displayNameWithAccelerator": "&Accélération du débit",
+                "displayName": "Accélération du débit",
+                "availableInSettingsRing": true,
+                "defaultVal": false,
+                "useConfig": false
+              }
+            ]
+          ],
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "attribute": "setting_voice",
+          "value": "hortense",
+          "type": "attribute_value"
+        },
+        {
+          "attribute": "availableVoices",
+          "value": {
+            "hortense": [
+              "VoiceInfo",
+              {
+                "id": "hortense",
+                "displayName": "Microsoft Hortense - French (France)",
+                "language": "fr_FR"
+              }
+            ],
+            "zira": [
+              "VoiceInfo",
+              {
+                "id": "zira",
+                "displayName": "Microsoft Zira - English (United States)",
+                "language": "en_US"
+              }
+            ]
+          },
+          "type": "attribute_value"
+        },
+        {
+          "attribute": "setting_rate",
+          "value": 50,
+          "type": "attribute_value"
+        },
+        {
+          "attribute": "setting_rateBoost",
+          "value": false,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "module": [
+        "LIST VOICES"
+      ]
+    },
+    {
+      "module": [
+        "SET",
+        "rate=0",
+        "language=fr-FR",
+        "synthesis_voice=Microsoft Zira - English (United States)",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SET",
+        "rate=10",
+        "language=fr-FR",
+        "synthesis_voice=Microsoft Zira - English (United States)",
+        "."
+      ]
+    },
+    {
+      "settings": [
+        "speech",
+        "list"
+      ]
+    },
+    {
+      "settings": [
+        "speech",
+        "values",
+        "voice"
+      ]
+    },
+    {
+      "settings": [
+        "speech",
+        "set",
+        "rate",
+        "60"
+      ]
+    },
+    {
+      "settings": [
+        "speech",
+        "set",
+        "rate",
+        "200"
+      ]
+    },
+    {
+      "settings": [
+        "speech",
+        "set",
+        "voice",
+        "microsoft hortense - french (france)"
+      ]
+    },
+    {
+      "settings": [
+        "speech",
+        "set",
+        "rateBoost",
+        "on"
+      ]
+    },
+    {
+      "settings": [
+        "speech",
+        "get",
+        "pitch"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+.\" SPDX-License-Identifier: GPL-2.0-or-later
+.TH NVDA-RDP-SETTINGS 1 2026-11-25 "nvda-rdp-linux 0.4.0" "User Commands"
+.SH NAME
+nvda-rdp-settings \- read and change the driver settings of NVDA on the RDP client
+.SH SYNOPSIS
+.B nvda-rdp-settings
+.BR speech | braille
+.B list
+.br
+.B nvda-rdp-settings
+.BR speech | braille
+.B get
+.I id
+.br
+.B nvda-rdp-settings
+.BR speech | braille
+.B values
+.I id
+.br
+.B nvda-rdp-settings
+.BR speech | braille
+.B set
+.I id value
+.SH DESCRIPTION
+.B nvda-rdp-settings
+runs in a session served by
+.BR nvda-rdp-server (7)
+and reaches the NVDA screen reader of the RDP client through RDAccess: the
+settings of its synthesizer
+.RB ( speech )
+or of its braille display driver
+.RB ( braille ).
+.PP
+NVDA reports its settings only if
+.I driver settings management
+is allowed in RDAccess's settings on the client; it is off by default.
+Without it,
+.B list
+says that NVDA reports no settings.
+.SH COMMANDS
+.TP
+.B list
+Each setting, one per line: its id, its value, its name in NVDA and, for
+a number, its range.
+.TP
+.BI get " id"
+One setting.
+.TP
+.BI values " id"
+The possible values of a setting that is neither a number nor on/off,
+such as
+.BR voice :
+their id, name and, for a voice, language.
+.TP
+.BI set " id value"
+Change a setting. The value is a whole number within the range, one of
+.BR on ,
+.BR off ,
+.BR true ,
+.BR false ,
+.BR yes ,
+.BR no ,
+or the id or the name (case ignored) of a possible value.
+.SH EXIT STATUS
+0 on success; 1 if the server of the channel does not answer, NVDA is not
+attached to the channel, or the setting or value is not valid.
+.SH EXAMPLES
+.nf
+nvda-rdp-settings speech list
+nvda-rdp-settings speech values voice
+nvda-rdp-settings speech set voice "Microsoft Zira \- English (United States)"
+nvda-rdp-settings speech set rate 60
+nvda-rdp-settings braille list
+.fi
+.SH FILES
+.TP
+.I $XDG_RUNTIME_DIR/nvda-rdp-server/speech-settings.sock
+.TQ
+.I $XDG_RUNTIME_DIR/nvda-rdp-server/braille-settings.sock
+Sockets of the speech module and of the braille server, readable by the
+user only.
+.SH SEE ALSO
+.BR nvda-rdp-server (7),
+.BR orca (1)

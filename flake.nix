@@ -157,7 +157,10 @@
         pkgs:
         import ./nix/server.nix {
           inherit pkgs;
-          manPage = manPage pkgs "nvda-rdp-server.7";
+          manPages = [
+            (manPage pkgs "nvda-rdp-server.7")
+            (manPage pkgs "nvda-rdp-settings.1")
+          ];
           preload = mkGrdPreload pkgs;
           source = pythonSource pkgs [ ./nvda_rdp_linux/server ];
         };

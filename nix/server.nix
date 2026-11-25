@@ -4,7 +4,7 @@
 # packaging/server, with this package's store paths.
 {
   pkgs,
-  manPage,
+  manPages,
   preload,
   source,
 }:
@@ -46,7 +46,8 @@ pkgs.stdenvNoCC.mkDerivation {
 
   installPhase = ''
     runHook preInstall
-    LIBEXECDIR=$out/libexec/nvda-rdp-linux \
+    BINDIR=$out/bin \
+      LIBEXECDIR=$out/libexec/nvda-rdp-linux \
       PKGLIBDIR=${preload}/lib/nvda-rdp-linux \
       PKGDATADIR=$out/share/nvda-rdp-linux \
       USERUNITDIR=$out/lib/systemd/user \
@@ -54,7 +55,9 @@ pkgs.stdenvNoCC.mkDerivation {
       SPEECH_DISPATCHER=${pkgs.speechd}/bin/speech-dispatcher \
       SESSION_PATH=${sessionPath} \
       sh install.sh
-    (cd ${manPage} && find share -type f -exec install -Dm644 {} $out/{} \;)
+    for manPage in ${lib.escapeShellArgs manPages}; do
+      (cd $manPage && find share -type f -exec install -Dm644 {} $out/{} \;)
+    done
     runHook postInstall
   '';
 

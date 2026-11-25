@@ -1,0 +1,4 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# -P: the current directory must not shadow the installed package.
+exec @PYTHON@ -P -m nvda_rdp_linux.server.settings_cli "$@"

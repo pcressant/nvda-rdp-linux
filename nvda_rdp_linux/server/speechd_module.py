@@ -27,6 +27,12 @@ Every message sent to NVDA starts with the per-utterance commands of
 ``prosody`` (Orca's voice changes relative to its default voice, language)
 and ends with commands back to NVDA's defaults; ``NVDA_RDP_PROSODY=0`` in the
 module's environment turns this off.
+
+With driver settings management allowed in RDAccess on the client
+(``driver_settings``), the voices of NVDA's synthesizer are the module's
+voices: Orca lists them, and choosing one changes NVDA's voice.  The voice
+is only sent when it differs from NVDA's, so that Speech Dispatcher's
+repeated settings do not reload it.
 """
 
 from __future__ import annotations
@@ -58,9 +64,11 @@ from ..common.speech import (
     MESSAGE_SPEAK,
 )
 from .channel import Channel
+from .driver_settings import Choice, DriverSettings
 from .input_time import InputTime
 from .orca_speech import OrcaSpeech
 from .prosody import NEUTRAL, prosody_commands, reset_commands
+from .settings_service import SettingsService
 
 LOG = logging.getLogger(__name__)
 
@@ -72,6 +80,8 @@ _MAX_INDEX = 1 << 30
 # If NVDA does not report the index placed before the text within this delay,
 # the message is ended so that Speech Dispatcher does not wait for ever.
 _BEGIN_TIMEOUT_MS = 2000
+VOICE_SETTING = "voice"
+GENERIC_VOICE = "NVDA"
 
 
 def parse_ssml(text: str) -> list[tuple[str, str]]:
@@ -87,6 +97,24 @@ def parse_ssml(text: str) -> list[tuple[str, str]]:
     if pos < len(text):
         items.append(("text", html.unescape(text[pos:])))
     return items
+
+
+def speechd_language(language: str | None) -> str:
+    """NVDA's ``fr_FR`` as Speech Dispatcher's ``fr-FR``; the locale's language without one."""
+    if not language:
+        return (os.environ.get("LANG") or "en").split("_")[0].split(".")[0]
+    return language.replace("_", "-")
+
+
+def voice_names(choices: list[Choice]) -> dict[str, Choice]:
+    """NVDA's voices by the name Speech Dispatcher and Orca show: unique, on one field."""
+    names: dict[str, Choice] = {}
+    for choice in choices:
+        name = " ".join(choice.name.split()) or choice.id
+        if name in names or name == GENERIC_VOICE:
+            name = f"{name} ({choice.id})"
+        names[name] = choice
+    return names
 
 
 def _index(index: int) -> list[object]:
@@ -119,6 +147,10 @@ class Module:
         self._base = dict(NEUTRAL)
         self.orca = OrcaSpeech()
         self._input_time = InputTime()
+        self.driver_settings = DriverSettings(self.channel)
+        self._settings_service = SettingsService("speech", self.driver_settings)
+        self._voice_name: str | None = None
+        self._listed_voices: set[str] = set()
         self._loop = GLib.MainLoop()
 
     # Main loop
@@ -130,9 +162,11 @@ class Module:
         )
         self.channel.start()
         self.orca.start()
+        self._settings_service.start()
         try:
             self._loop.run()
         finally:
+            self._settings_service.stop()
             self.channel.stop()
             if self._local is not None:
                 self._local.close()
@@ -187,8 +221,7 @@ class Module:
         elif line == "PAUSE":
             self._stop(704, "PAUSE")
         elif line.startswith("LIST VOICES"):
-            lang = (os.environ.get("LANG") or "en").split("_")[0].split(".")[0]
-            self._out(f"200-NVDA\t{lang}\tnone\n200 OK VOICE LIST SENT")
+            self._list_voices()
         elif line.startswith("DEBUG"):
             self._out("200 OK DEBUGGING")
         elif line == "QUIT":
@@ -204,6 +237,7 @@ class Module:
                 name, _, value = item.partition("=")
                 self._settings[name] = value
             self._out("203 OK SETTINGS RECEIVED")
+            self._select_voice(self._settings.get("synthesis_voice"))
         elif kind == "AUDIO":
             self._out("203 OK AUDIO INITIALIZED")
         elif kind == "LOGLEVEL":
@@ -217,6 +251,40 @@ class Module:
                 return
             self._out("200 OK SPEAKING")
             self._speak(kind, text)
+
+    # NVDA's voices
+
+    def _nvda_voices(self) -> dict[str, Choice]:
+        if not self.channel.ready or self.driver_settings.setting(VOICE_SETTING) is None:
+            return {}
+        return voice_names(self.driver_settings.choices(VOICE_SETTING) or [])
+
+    def _list_voices(self) -> None:
+        voices = self._nvda_voices()
+        if voices:
+            self._listed_voices = set(voices)
+            lines = [
+                f"200-{name}\t{speechd_language(choice.language)}\tnone"
+                for name, choice in voices.items()
+            ]
+        else:
+            lines = [f"200-{GENERIC_VOICE}\t{speechd_language(None)}\tnone"]
+        self._out("\n".join([*lines, "200 OK VOICE LIST SENT"]))
+
+    def _select_voice(self, name: str | None) -> None:
+        """Orca chose a voice: NVDA's voice of that name, if it is not NVDA's already."""
+        if name == self._voice_name:
+            return
+        choice = self._nvda_voices().get(name or "")
+        if choice is None:
+            return  # Not one of NVDA's voices, or they are not known yet: tried again.
+        self._voice_name = name
+        if self.driver_settings.value(VOICE_SETTING) == choice.id:
+            return
+        LOG.info("Orca chose NVDA's voice %s (%s)", name, choice.id)
+        if self.driver_settings.set(VOICE_SETTING, choice.id):
+            # NVDA's language follows its voice.
+            self.channel.send(MESSAGE_ATTRIBUTE_REQUEST, attribute=ATTRIBUTE_LANGUAGE)
 
     # Per-utterance prosody and language
 
@@ -316,6 +384,9 @@ class Module:
                 value=self._input_time.since_input(self.channel.attached_at),
             )
             return
+        if kind == MESSAGE_ATTRIBUTE_VALUE:
+            self.driver_settings.on_attribute_value(message.get("attribute"))
+            return
         if kind != MESSAGE_INDEX:
             return
         index = message.get("index")
@@ -346,6 +417,9 @@ class Module:
             self._out("702 END")
 
     def _on_ready(self, ready: bool) -> None:
+        self.driver_settings.on_ready(ready)
+        if not ready:
+            self._voice_name = None
         if ready:
             # NVDA's synthesizer language and the commands it supports
             # (rdAccess@19f5c53: addon/globalPlugins/rdAccess/handlers/
@@ -398,6 +472,10 @@ class Module:
             value = self._settings.get(name)
             if value is None or value in ("", "NULL") or self._applied.get(name) == value:
                 continue
+            if name == "synthesis_voice" and (
+                value == GENERIC_VOICE or value in self._listed_voices
+            ):
+                continue  # A voice of NVDA, unknown to the local Speech Dispatcher.
             try:
                 setter(value)
                 self._applied[name] = value

@@ -189,10 +189,15 @@ if it has a local and a remote session at the same time, the first one opened
 decides. A new remote login to the same account joins its existing session.
 .PP
 Only the differences from Orca's default voice reach NVDA; Orca's choice of
-synthesizer and voice has no effect there. A change of the display size costs
+synthesizer has no effect there. Orca's choice of voice changes NVDA's voice,
+and
+.BR nvda\-rdp\-settings (1)
+changes NVDA's driver settings, only if driver settings management is allowed
+in RDAccess on the client. A change of the display size costs
 a reconnection of about 2 seconds.
 .SH SEE ALSO
 .BR nvda\-rdp\-client (1),
+.BR nvda\-rdp\-settings (1),
 .BR grdctl (1),
 .BR orca (1),
 .BR speech\-dispatcher (1),

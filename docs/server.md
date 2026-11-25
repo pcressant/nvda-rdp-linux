@@ -124,11 +124,12 @@ RDAccess server role, the one NVDA plays on Windows.
 
 | Path (Debian; Arch uses `/usr/lib/nvda-rdp-linux` for both directories) | Content |
 | --- | --- |
+| `/usr/bin/nvda-rdp-settings` | NVDA's driver settings from the session |
 | `/usr/lib/<multiarch>/nvda-rdp-linux/libnvda-rdp-grd-preload.so` | channel library |
 | `/usr/libexec/nvda-rdp-linux/` | `nvda-rdp-server-session`, `nvda-rdp-brlapi-server`, `nvda-rdp-speechd-module` |
 | `/usr/share/nvda-rdp-linux/speechd/speechd.conf` | the session's Speech Dispatcher configuration |
 | `/usr/lib/systemd/user/` | the three units and the two drop-in directories |
-| `$XDG_RUNTIME_DIR/nvda-rdp-server/` | state of the session: `remote`, `orca.env` |
+| `$XDG_RUNTIME_DIR/nvda-rdp-server/` | state of the session: `remote`, `orca.env`; sockets `speech-settings.sock` and `braille-settings.sock` of `nvda-rdp-settings`, mode 0600 |
 | `$XDG_RUNTIME_DIR/nvda-rdp-brlapi.key` | BrlAPI key, mode 0600 |
 | `$XDG_RUNTIME_DIR/nvda-rdp-speechd-module.log` | log of the speech module |
 
@@ -252,6 +253,23 @@ NVDA; once the user has logged in, the session is served the same way.
 * Braille shows Orca's line on NVDA's display, with Orca's table. The
   display's panning, line and routing keys go to Orca, as do braille typing
   and the display's gestures.
+* NVDA's driver settings, if "driver settings management" is allowed in
+  RDAccess's settings on Windows (it is off by default): the voices of
+  NVDA's synthesizer are listed among Orca's voices for the NVDA RDP
+  synthesizer, and choosing one in Orca changes NVDA's voice. The command
+  `nvda-rdp-settings`, in the session, lists, reads and changes the
+  settings of NVDA's synthesizer and braille display, with their possible
+  values (see `nvda-rdp-settings(1)`):
+
+  ```sh
+  nvda-rdp-settings speech list
+  nvda-rdp-settings speech values voice
+  nvda-rdp-settings speech set rate 60
+  nvda-rdp-settings braille list
+  ```
+
+  Without that permission, Orca offers one voice, `NVDA`, and the command
+  says that NVDA reports no settings.
 * Ordinary keyboard and audio are RDP's own.
 * If `mstsc` is closed, the session stays open; a new connection to the same
   account joins it.
@@ -306,8 +324,11 @@ system journal; read them as root.
   nor headless sessions.
 * An account has one `orca.service`: with a local and a remote session at the
   same time, the first one opened decides.
-* Orca's choice of synthesizer and voice, and its pitch range, have no effect
-  on NVDA. The reference voice is read when NVDA attaches.
+* Orca's choice of synthesizer, and its pitch range, have no effect on
+  NVDA; nor has its choice of voice without driver settings management.
+  The reference voice is read when NVDA attaches. Orca reads the voice list
+  when it asks for it: after a synthesizer change in NVDA, Orca's
+  preferences show the new voices once reopened.
 * A display size change costs Orca a reconnection of about 2 seconds,
   because Orca reads the size only once. A display that is removed first
   does not: Orca then waits for a size and takes the next display's within

@@ -1,0 +1,157 @@
+{
+  "description": "Driver settings of NVDA's braille display through nvda-rdp-settings: no client attached; a client that reports nothing; driver settings management not allowed (no settings); then a display with an on/off setting and a list of values.",
+  "component": "brlapi",
+  "steps": [
+    {
+      "settings": [
+        "braille",
+        "list"
+      ]
+    },
+    {
+      "accept": "braille"
+    },
+    {
+      "send": "braille",
+      "hex": "11"
+    },
+    {
+      "send": "braille",
+      "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "settings": [
+        "braille",
+        "list"
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "supportedSettings",
+          "value": [],
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "settings": [
+        "braille",
+        "list"
+      ]
+    },
+    {
+      "settings": [
+        "braille",
+        "get",
+        "dotFirmness"
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "supportedSettings",
+          "value": [
+            [
+              "BooleanDriverSetting",
+              {
+                "id": "beep",
+                "displayNameWithAccelerator": "&Bip",
+                "displayName": "Bip",
+                "availableInSettingsRing": true,
+                "defaultVal": true,
+                "useConfig": false
+              }
+            ],
+            [
+              "DriverSetting",
+              {
+                "id": "dotFirmness",
+                "displayNameWithAccelerator": "&Fermeté des points",
+                "displayName": "Fermeté des points",
+                "availableInSettingsRing": true,
+                "defaultVal": null,
+                "useConfig": false
+              }
+            ]
+          ],
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "setting_beep",
+          "value": true,
+          "type": "attribute_value"
+        },
+        {
+          "attribute": "setting_dotFirmness",
+          "value": "2",
+          "type": "attribute_value"
+        },
+        {
+          "attribute": "availableDotfirmnesss",
+          "value": {
+            "1": [
+              "StringParameterInfo",
+              {
+                "id": "1",
+                "displayName": "Souple"
+              }
+            ],
+            "2": [
+              "StringParameterInfo",
+              {
+                "id": "2",
+                "displayName": "Moyenne"
+              }
+            ],
+            "3": [
+              "StringParameterInfo",
+              {
+                "id": "3",
+                "displayName": "Ferme"
+              }
+            ]
+          },
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "settings": [
+        "braille",
+        "values",
+        "dotFirmness"
+      ]
+    },
+    {
+      "settings": [
+        "braille",
+        "set",
+        "dotFirmness",
+        "Ferme"
+      ]
+    },
+    {
+      "settings": [
+        "braille",
+        "set",
+        "beep",
+        "peut-être"
+      ]
+    },
+    {
+      "settings": [
+        "braille",
+        "values",
+        "beep"
+      ]
+    }
+  ]
+}

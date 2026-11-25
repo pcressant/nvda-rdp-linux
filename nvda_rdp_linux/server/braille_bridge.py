@@ -49,9 +49,11 @@ from ..common.rdaccess import (
 from .braille_input import BrailleInput
 from .brlapi_server import BrlapiServer, Write
 from .channel import Channel
+from .driver_settings import DriverSettings
 from .input_time import InputTime
 from .mutter_input import MutterKeyInjector
 from .orca_braille import OrcaBrailleSettings
+from .settings_service import SettingsService
 
 LOG = logging.getLogger(__name__)
 
@@ -89,6 +91,8 @@ class BrailleBridge:
             CHANNEL_NAME, DRIVER_TYPE, SOCKET_NAME, self._on_message, self._on_ready
         )
         self.settings = OrcaBrailleSettings(tablesdir, self._render_again)
+        self.driver_settings = DriverSettings(self.channel)
+        self._settings_service = SettingsService("braille", self.driver_settings)
         self.input = BrailleInput(
             self._send_command,
             lambda: computer_table(tablesdir),
@@ -107,8 +111,10 @@ class BrailleBridge:
         self.settings.start()
         self.server.start()
         self.channel.start()
+        self._settings_service.start()
 
     def stop(self) -> None:
+        self._settings_service.stop()
         self.channel.stop()
         self.server.stop()
         self.input.injector.close()
@@ -212,6 +218,7 @@ class BrailleBridge:
     # Channel
 
     def _on_ready(self, ready: bool) -> None:
+        self.driver_settings.on_ready(ready)
         if not ready:
             # The next client may have another display: wait for its size and map.
             self._num_cells = 0
@@ -239,6 +246,7 @@ class BrailleBridge:
                 )
         elif kind == MESSAGE_ATTRIBUTE_VALUE:
             attribute = message.get("attribute")
+            self.driver_settings.on_attribute_value(attribute)
             if attribute in (ATTRIBUTE_NUM_CELLS, ATTRIBUTE_NUM_ROWS, ATTRIBUTE_NUM_COLS):
                 self._set_dimension(attribute, message.get("value"))
             elif attribute == ATTRIBUTE_GESTURE_MAP:

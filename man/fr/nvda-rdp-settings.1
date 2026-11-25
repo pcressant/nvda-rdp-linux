@@ -1,0 +1,85 @@
+.\" SPDX-License-Identifier: GPL-2.0-or-later
+.\" Traduction de man/nvda-rdp-settings.1, qui fait référence.
+.TH NVDA-RDP-SETTINGS 1 2026-11-25 "nvda-rdp-linux 0.4.0" "Commandes utilisateur"
+.SH NOM
+nvda-rdp-settings \- lire et changer les réglages des pilotes de NVDA sur le client RDP
+.SH SYNOPSIS
+.B nvda-rdp-settings
+.BR speech | braille
+.B list
+.br
+.B nvda-rdp-settings
+.BR speech | braille
+.B get
+.I id
+.br
+.B nvda-rdp-settings
+.BR speech | braille
+.B values
+.I id
+.br
+.B nvda-rdp-settings
+.BR speech | braille
+.B set
+.I id valeur
+.SH DESCRIPTION
+.B nvda-rdp-settings
+s'exécute dans une session servie par
+.BR nvda-rdp-server (7)
+et atteint le lecteur d'écran NVDA du client RDP par RDAccess : les
+réglages de son synthétiseur
+.RB ( speech )
+ou de son pilote de plage braille
+.RB ( braille ).
+.PP
+NVDA ne signale ses réglages que si la
+.I gestion des paramètres du pilote
+est autorisée dans les paramètres de RDAccess sur le client ; elle est
+désactivée par défaut. Sans elle,
+.B list
+indique que NVDA ne signale aucun réglage.
+.SH COMMANDES
+.TP
+.B list
+Chaque réglage, un par ligne : son identifiant, sa valeur, son nom dans
+NVDA et, pour un nombre, son intervalle.
+.TP
+.BI get " id"
+Un réglage.
+.TP
+.BI values " id"
+Les valeurs possibles d'un réglage qui n'est ni un nombre ni oui/non, comme
+.BR voice :
+leur identifiant, leur nom et, pour une voix, sa langue.
+.TP
+.BI set " id valeur"
+Change un réglage. La valeur est un nombre entier dans l'intervalle, l'un de
+.BR on ,
+.BR off ,
+.BR true ,
+.BR false ,
+.BR yes ,
+.BR no ,
+ou l'identifiant ou le nom (sans tenir compte de la casse) d'une valeur
+possible.
+.SH CODE DE RETOUR
+0 en cas de succès ; 1 si le serveur du canal ne répond pas, si NVDA n'est
+pas rattaché au canal, ou si le réglage ou la valeur n'est pas valable.
+.SH EXEMPLES
+.nf
+nvda-rdp-settings speech list
+nvda-rdp-settings speech values voice
+nvda-rdp-settings speech set voice "Microsoft Zira \- English (United States)"
+nvda-rdp-settings speech set rate 60
+nvda-rdp-settings braille list
+.fi
+.SH FICHIERS
+.TP
+.I $XDG_RUNTIME_DIR/nvda-rdp-server/speech-settings.sock
+.TQ
+.I $XDG_RUNTIME_DIR/nvda-rdp-server/braille-settings.sock
+Sockets du module de parole et du serveur braille, accessibles au seul
+utilisateur.
+.SH VOIR AUSSI
+.BR nvda-rdp-server (7),
+.BR orca (1)

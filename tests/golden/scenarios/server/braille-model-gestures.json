@@ -1,0 +1,223 @@
+{
+  "description": "Display gestures resolved in NVDA's order: the model's binding before the generic one, a routing key's cell-numbered binding first; braille input modifier toggles hold Control for the next kb: key or typed cell; a script with no equivalent does nothing.",
+  "component": "brlapi",
+  "steps": [
+    {
+      "accept": "braille"
+    },
+    {
+      "send": "braille",
+      "hex": "11"
+    },
+    {
+      "send": "braille",
+      "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "numCells",
+          "value": 40,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "connect"
+    },
+    {
+      "orca": "enter"
+    },
+    {
+      "orca": "accept_commands"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "gestureMap",
+          "value": [
+            "GlobalGestureMap",
+            {
+              "globalCommands.GlobalCommands": {
+                "kb:home": "br(brltty.al):top",
+                "kb:end": "br(brltty):top",
+                "braille_routeTo": "br(brltty):route",
+                "kb:escape": "br(brltty):route1",
+                "braille_toggleControl": "br(brltty):ctrl",
+                "review_top": "br(brltty):revtop"
+              }
+            }
+          ],
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "top",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "top",
+          "routingIndex": null,
+          "model": "bm",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "route",
+          "routingIndex": 0,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "route",
+          "routingIndex": 5,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "ctrl",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 14,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 14,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "ctrl",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "ctrl",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 14,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "ctrl",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "top",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "revtop",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "orca": "keys"
+    }
+  ]
+}

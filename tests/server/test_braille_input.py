@@ -209,3 +209,96 @@ def test_discarded_cells_are_not_typed(contracted) -> None:
     handler.discard_pending()
     handler.flush()
     assert injector.presses == []
+
+
+def bindings(**scripts: str) -> list[object]:
+    return ["GlobalGestureMap", {"globalCommands.GlobalCommands": scripts}]
+
+
+def test_model_binding_before_generic_and_cell_numbered_first(setup) -> None:
+    handler, commands, injector = setup
+    handler.set_gesture_map(
+        bindings(
+            **{
+                "kb:home": "br(brltty.al):top",
+                "kb:end": "br(brltty):top",
+                "kb:escape": "br(brltty.al):route3",
+                "braille_routeTo": "br(brltty):route",
+            }
+        )
+    )
+    handler.handle(key("top", model="al"))
+    handler.handle(key("top", model="bm"))
+    handler.handle(key("top"))
+    handler.handle(key("route", model="al", routingIndex=2))
+    handler.handle(key("route", model="bm", routingIndex=2))
+    assert injector.presses == [
+        [KEY_NAMES["home"]],
+        [KEY_NAMES["end"]],
+        [KEY_NAMES["end"]],
+        [KEY_NAMES["escape"]],
+    ]
+    assert commands == [(KEY_CMD_ROUTE, 2)]
+
+
+def test_braille_keyboard_identifiers_follow_nvda(setup) -> None:
+    handler, _commands, injector = setup
+    handler.set_gesture_map(
+        bindings(
+            **{
+                "kb:tab": "bk:dot1+dot2",
+                "kb:escape": "bk:space+dots",
+                "kb:home": "bk:dot7+dot8",
+            }
+        )
+    )
+    # Plain dots are only bk:dots for NVDA: typed, the exact binding unused.
+    handler.handle(dots(0x03))
+    # Space with dots: the generic space binding when the chord has none.
+    handler.handle(dots(0x01, space=True))
+    # Dots 7 and 8: their exact binding before the generic one.
+    handler.handle(dots(0xC0))
+    assert injector.presses == [[ord("b")], [KEY_NAMES["escape"]], [KEY_NAMES["home"]]]
+
+
+def test_modifier_toggles_hold_for_the_next_key(setup) -> None:
+    handler, _commands, injector = setup
+    handler.set_gesture_map(
+        bindings(
+            braille_toggleControlShift="br(brltty):cs",
+            braille_toggleControl="br(brltty):c",
+            braille_toggleNVDAKey="br(brltty):nvda",
+            **{"kb:tab": "br(brltty):tab"},
+        )
+    )
+    handler.handle(key("cs"))
+    assert handler.modifiers == {"control", "shift"}
+    handler.handle(key("tab"))
+    handler.handle(key("c"))
+    handler.handle(key("cs"))
+    assert handler.modifiers == {"shift"}
+    handler.handle(dots(0x0E))
+    handler.handle(key("nvda"))
+    assert handler.modifiers == set()
+    shift, control = KEY_NAMES["shift"], KEY_NAMES["control"]
+    assert injector.presses == [[control, shift, KEY_NAMES["tab"]], [shift, ord("s")]]
+
+
+def test_enter_space_and_translate_release_the_modifiers(setup) -> None:
+    handler, _commands, injector = setup
+    handler.set_gesture_map(bindings(braille_toggleAlt="br(brltty):alt"))
+    for release in (dots(0x80), dots(0, space=True), dots(0xC0)):
+        handler.handle(key("alt"))
+        handler.handle(release)
+        assert handler.modifiers == set()
+    assert injector.presses == [[KEY_NAMES["enter"]], [KEY_NAMES["space"]]]
+
+
+def test_modified_cell_waits_for_no_contracted_word(contracted) -> None:
+    handler, _commands, injector, _table, _changes = contracted
+    handler.set_gesture_map(bindings(braille_toggleControl="br(brltty):c"))
+    handler.handle(dots(0x03))
+    handler.handle(key("c"))
+    handler.handle(dots(0x0E))
+    assert typed(injector)[:-1] == "bien"
+    assert injector.presses[-1] == [KEY_NAMES["control"], ord("s")]

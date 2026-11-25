@@ -318,6 +318,12 @@ system journal; read them as root.
   shown at the cursor, until a space, Enter, dots 7-8 or another action
   types the word; dot 7 removes the last waiting cell. Unlike NVDA, a word
   already typed is not translated again when it is continued.
+* Display keys follow NVDA's gesture map as RDAccess sends it, the user's
+  own gestures included, with model-specific bindings first. Only NVDA
+  scripts with an equivalent act: panning, lines, routing, back to focus,
+  `kb:` keys, braille typing, and the modifier toggles for Shift, Control,
+  Alt and Windows. The toggles with the NVDA key, and the other NVDA
+  scripts, do nothing; the log names each of them once.
 * Orca handles one braille line. A display of several rows is offered as
   one line of all its cells, filled row after row, as RDAccess sends them.
 * Say all stops on a disconnection.

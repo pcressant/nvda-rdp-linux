@@ -1,0 +1,58 @@
+# braille-model-gestures.json: Display gestures resolved in NVDA's order: the model's binding before the generic one, a routing key's cell-numbered binding first; braille input modifier toggles hold Control for the next kb: key or typed cell; a script with no equivalent does nothing.
+startup:
+  trace {"src": "dbus", "call": "ready", "args": [["org.gnome.Mutter.RemoteDesktop", "org.gnome.Orca1.Service"]]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 1: {"accept": "braille"}
+step 2: {"send": "braille", "hex": "11"}
+  braille <- {"hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+step 3: {"send": "braille", "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  braille <- {"json": "{\"attribute\": \"numCells\", \"type\": \"attribute_request\"}"}
+  braille <- {"json": "{\"attribute\": \"gestureMap\", \"type\": \"attribute_request\"}"}
+  braille <- {"json": "{\"channel\": \"NVDA-BRAILLE\", \"type\": \"protocol_version\", \"version\": 2}"}
+step 4: {"send": "braille", "json": [{"attribute": "numCells", "value": 40, "type": "attribute_value"}]}
+step 5: {"orca": "connect"}
+  orca <- {"action": "connect", "displaySize": [40, 1], "driverName": "RDAccess", "modelIdentifier": "nvda"}
+step 6: {"orca": "enter"}
+  orca <- {"action": "enter"}
+step 7: {"orca": "accept_commands"}
+  orca <- {"action": "accept_commands"}
+step 8: {"send": "braille", "json": [{"attribute": "gestureMap", "value": ["GlobalGestureMap", {"globalCommands.GlobalCommands": {"kb:home": "br(brltty.al):top", "kb:end": "br(brltty):top", "braille_routeTo": "br(brltty):route", "kb:escape": "br(brltty):route1", "braille_toggleControl": "br(brltty):ctrl", "review_top": "br(brltty):revtop"}}], "type": "attribute_value"}]}
+step 9: {"send": "braille", "json": [{"source": "brltty", "id": "top", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+  trace {"src": "dbus", "call": "CreateSession", "args": ["/org/gnome/Mutter/RemoteDesktop"]}
+  trace {"src": "dbus", "call": "Start", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden"]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65360, true]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65360, false]}
+step 10: {"send": "braille", "json": [{"source": "brltty", "id": "top", "routingIndex": null, "model": "bm", "type": "braille_input"}]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65367, true]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65367, false]}
+step 11: {"send": "braille", "json": [{"source": "brltty", "id": "route", "routingIndex": 0, "model": "al", "type": "braille_input"}]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65307, true]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65307, false]}
+step 12: {"send": "braille", "json": [{"source": "brltty", "id": "route", "routingIndex": 5, "model": "al", "type": "braille_input"}]}
+step 13: {"send": "braille", "json": [{"source": "brltty", "id": "ctrl", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 14: {"send": "braille", "json": [{"source": "brltty", "id": "passdots", "routingIndex": null, "model": "al", "dots": 14, "space": false, "type": "braille_input"}]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65507, true]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 115, true]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 115, false]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65507, false]}
+step 15: {"send": "braille", "json": [{"source": "brltty", "id": "passdots", "routingIndex": null, "model": "al", "dots": 14, "space": false, "type": "braille_input"}]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 115, true]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 115, false]}
+step 16: {"send": "braille", "json": [{"source": "brltty", "id": "ctrl", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 17: {"send": "braille", "json": [{"source": "brltty", "id": "ctrl", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 18: {"send": "braille", "json": [{"source": "brltty", "id": "passdots", "routingIndex": null, "model": "al", "dots": 14, "space": false, "type": "braille_input"}]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 115, true]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 115, false]}
+step 19: {"send": "braille", "json": [{"source": "brltty", "id": "ctrl", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 20: {"send": "braille", "json": [{"source": "brltty", "id": "top", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65507, true]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65360, true]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65360, false]}
+  trace {"src": "dbus", "call": "NotifyKeyboardKeysym", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden", 65507, false]}
+step 21: {"send": "braille", "json": [{"source": "brltty", "id": "revtop", "routingIndex": null, "model": "al", "type": "braille_input"}]}
+step 22: {"orca": "keys"}
+  orca <- {"action": "keys", "keys": [{"command": 65536, "argument": 5, "flags": 0}]}
+shutdown:
+  trace {"src": "dbus", "call": "Stop", "args": ["/org/gnome/Mutter/RemoteDesktop/Session/golden"]}
+returncode: 0

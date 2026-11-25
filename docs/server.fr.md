@@ -341,6 +341,14 @@ peut manquer l'unité d'un processus bref. Les lignes des utilisateurs des
   points 7-8 ou une autre action saisissent le mot ; le point 7 retire la
   dernière cellule en attente. Contrairement à NVDA, un mot déjà saisi
   n'est pas retraduit quand on le complète.
+* Les touches de la plage suivent la table de gestes de NVDA telle que
+  RDAccess l'envoie, gestes personnels de l'utilisateur compris, les
+  affectations propres au modèle d'abord. Seuls les scripts NVDA qui ont
+  un équivalent agissent : défilement, lignes, routage, retour au focus,
+  touches `kb:`, saisie braille, et les modificateurs verrouillables Maj,
+  Ctrl, Alt et Windows. Ceux qui utilisent la touche NVDA, comme les
+  autres scripts NVDA, sont sans effet ; le journal les nomme une fois
+  chacun.
 * Orca gère une seule ligne braille. Une plage de plusieurs rangées lui est
   présentée comme une ligne de toutes ses cellules, remplie rangée après
   rangée, comme RDAccess les envoie.

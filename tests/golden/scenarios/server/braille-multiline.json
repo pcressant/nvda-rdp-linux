@@ -1,0 +1,82 @@
+{
+  "description": "Braille: a display of 4 rows of 20 cells is offered to Orca as one line of 80 cells, as RDAccess sends its cells; a routing key of the second row routes in that line.",
+  "component": "brlapi",
+  "steps": [
+    {
+      "accept": "braille"
+    },
+    {
+      "send": "braille",
+      "hex": "11"
+    },
+    {
+      "send": "braille",
+      "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "numRows",
+          "value": 4,
+          "type": "attribute_value"
+        },
+        {
+          "attribute": "numCols",
+          "value": 20,
+          "type": "attribute_value"
+        },
+        {
+          "attribute": "numCells",
+          "value": 80,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "connect"
+    },
+    {
+      "orca": "enter"
+    },
+    {
+      "orca": "accept_commands"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "gestureMap",
+          "value": [
+            "GlobalGestureMap",
+            {
+              "globalCommands.GlobalCommands": {
+                "braille_routeTo": "br(brltty):route"
+              }
+            }
+          ],
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "write",
+      "text": "première rangée de vingt et la suite sur la deuxième"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "route",
+          "routingIndex": 25,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "orca": "keys"
+    }
+  ]
+}

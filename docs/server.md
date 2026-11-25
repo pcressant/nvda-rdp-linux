@@ -308,7 +308,12 @@ system journal; read them as root.
   same time, the first one opened decides.
 * Orca's choice of synthesizer and voice, and its pitch range, have no effect
   on NVDA. The reference voice is read when NVDA attaches.
-* A display size change costs a reconnection of about 2 seconds.
+* A display size change costs Orca a reconnection of about 2 seconds,
+  because Orca reads the size only once. A display that is removed first
+  does not: Orca then waits for a size and takes the next display's within
+  half a second.
+* Orca handles one braille line. A display of several rows is offered as
+  one line of all its cells, filled row after row, as RDAccess sends them.
 * Say all stops on a disconnection.
 
 ## Design notes from the study

@@ -3,12 +3,19 @@
 
 """The client's NVDA braille display, offered to Orca as a BrlAPI display.
 
-1. Size: the client's ``numCells`` is the display size the server reports.
-   It is requested when the channel is ready and taken from any push.
-   Orca waits while it is 0 (orca@7f241c6:src/orca/braille.py:690-722) and
-   reads it once otherwise, so a later change closes Orca's connection: Orca
-   reconnects within about two seconds (braille.py:123, 770-790) and reads
-   the new size.
+1. Size: as RDAccess's remote driver (rdAccess 2.1.0:
+   addon/brailleDisplayDrivers/remote.py, ``_get_numCells``), the client's
+   ``numRows`` times ``numCols`` when both are known, else its ``numCells``.
+   ``numCells`` is requested when the channel is ready; all three are taken
+   from any push.  Orca handles one line only, so a display of several rows
+   is offered as one line of all its cells, row after row, which is also
+   how RDAccess sends them.  Orca waits while the size is 0, asking every
+   500 ms (orca@7f241c6:src/orca/braille.py:690-722), and reads it once
+   otherwise, so a change between two nonzero sizes closes Orca's
+   connection: Orca reconnects within about two seconds (braille.py:123,
+   770-790) and reads the new size.  A size of 0 (no display) is reported
+   too: Orca reconnects, waits, and takes the next display's size without
+   another reconnection.
 2. Output: Orca writes the visible text, attributes and cursor; the text
    becomes dots with liblouis, with Orca's contraction table when contracted
    braille is on (``orca_braille``), else a computer braille table.
@@ -27,6 +34,8 @@ import louis
 from ..common.braille import (
     ATTRIBUTE_GESTURE_MAP,
     ATTRIBUTE_NUM_CELLS,
+    ATTRIBUTE_NUM_COLS,
+    ATTRIBUTE_NUM_ROWS,
     CHANNEL_NAME,
     DRIVER_TYPE,
     MESSAGE_BRAILLE_INPUT,
@@ -85,6 +94,7 @@ class BrailleBridge:
         )
         self._input_time = InputTime()
         self._num_cells = 0
+        self._dimensions: dict[str, int] = {}
         self._last_write: Write | None = None
         self._cursor = 0
         self._last_cells: list[int] | None = None
@@ -101,15 +111,31 @@ class BrailleBridge:
 
     # Size
 
-    def _set_size(self, num_cells: object) -> None:
-        valid = isinstance(num_cells, int) and not isinstance(num_cells, bool)
-        num_cells = num_cells if valid and num_cells > 0 else 0
+    def _set_dimension(self, attribute: str, value: object) -> None:
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            # Not "no display" (0): an invalid value changes nothing.
+            LOG.warning("ignoring invalid %s=%r", attribute, value)
+            return
+        self._dimensions[attribute] = value
+        rows = self._dimensions.get(ATTRIBUTE_NUM_ROWS, 0)
+        cols = self._dimensions.get(ATTRIBUTE_NUM_COLS, 0)
+        size = rows * cols or self._dimensions.get(ATTRIBUTE_NUM_CELLS, 0)
+        if size != self._num_cells or attribute == ATTRIBUTE_NUM_CELLS:
+            self._set_size(size)
+
+    def _set_size(self, num_cells: int) -> None:
         self._num_cells = num_cells
         self._last_cells = None
+        reported = self.server.display_size
         if not num_cells:
             LOG.info("the client reports no braille display")
+            if reported:
+                self.server.display_size = 0
+                if self.server.has_clients:
+                    LOG.info("Orca must reconnect and wait for a display")
+                    self._last_write = None
+                    self.server.disconnect_all()
             return
-        reported = self.server.display_size
         self.server.display_size = num_cells
         if reported == num_cells:
             self._render_again()
@@ -172,6 +198,7 @@ class BrailleBridge:
         if not ready:
             # The next client may have another display: wait for its size and map.
             self._num_cells = 0
+            self._dimensions = {}
             self._last_cells = None
             self.input.clear_gesture_map()
             return
@@ -193,9 +220,10 @@ class BrailleBridge:
                     value=self._input_time.since_input(self.channel.attached_at),
                 )
         elif kind == MESSAGE_ATTRIBUTE_VALUE:
-            if message.get("attribute") == ATTRIBUTE_NUM_CELLS:
-                self._set_size(message.get("value"))
-            elif message.get("attribute") == ATTRIBUTE_GESTURE_MAP:
+            attribute = message.get("attribute")
+            if attribute in (ATTRIBUTE_NUM_CELLS, ATTRIBUTE_NUM_ROWS, ATTRIBUTE_NUM_COLS):
+                self._set_dimension(attribute, message.get("value"))
+            elif attribute == ATTRIBUTE_GESTURE_MAP:
                 self.input.set_gesture_map(message.get("value"))
         elif kind == MESSAGE_BRAILLE_INPUT:
             try:

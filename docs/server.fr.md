@@ -330,8 +330,13 @@ peut manquer l'unité d'un processus bref. Les lignes des utilisateurs des
   à distance en même temps, la première ouverte décide.
 * Le choix de synthétiseur et de voix d'Orca, et sa plage de hauteur, n'ont
   pas d'effet sur NVDA. La voix de référence est lue quand NVDA se rattache.
-* Un changement de taille de la plage coûte une reconnexion d'environ
-  2 secondes.
+* Un changement de taille de la plage coûte à Orca une reconnexion
+  d'environ 2 secondes, car Orca ne lit la taille qu'une fois. Ce n'est pas
+  le cas si la plage est d'abord retirée : Orca attend alors une taille et
+  prend celle de la plage suivante en moins d'une demi-seconde.
+* Orca gère une seule ligne braille. Une plage de plusieurs rangées lui est
+  présentée comme une ligne de toutes ses cellules, remplie rangée après
+  rangée, comme RDAccess les envoie.
 * La lecture continue s'arrête à une déconnexion.
 
 ## Notes de conception tirées de l'étude

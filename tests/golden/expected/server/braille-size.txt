@@ -40,6 +40,6 @@ step 15: {"orca": "write", "text": "vingt"}
   trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
 step 16: {"send": "braille", "json": [{"attribute": "numCells", "value": 0, "type": "attribute_value"}]}
 step 17: {"orca": "write", "text": "rien"}
-  orca <- {"action": "write"}
+  orca <- {"action": "write", "error": "OperationError: write in writePacket: Broken pipe"}
 shutdown:
 returncode: 0

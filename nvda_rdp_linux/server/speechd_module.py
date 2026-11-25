@@ -32,6 +32,15 @@ once when no such mark is left or none comes within 1.5 s.  RDAccess's
 ``pause_speech`` is not used: NVDA would then also resume the text that
 Speech Dispatcher sends again.
 
+NVDA plays only tones and its own sound files (RDAccess's ``tone`` and
+``wave``, rdAccess@2.1.0: addon/globalPlugins/rdAccess/handlers/
+remoteSpeechHandler.py), and drops the beep and wave commands of a speech
+sequence.  A sound icon (SOUND_ICON) named like one of NVDA's sounds plays
+it, ``capital`` and the other names play a tone.  With Orca's capitalization
+style "icon" (``cap_let_recogn=icon``), a capital letter spoken alone is
+preceded by NVDA's tone for capitals once NVDA begins it.  Orca's own sounds
+are played in the session and heard through RDP's audio.
+
 Every message sent to NVDA starts with the per-utterance commands of
 ``prosody`` (Orca's voice changes relative to its default voice, language)
 and ends with commands back to NVDA's defaults; ``NVDA_RDP_PROSODY=0`` in the
@@ -71,6 +80,8 @@ from ..common.speech import (
     MESSAGE_CANCEL,
     MESSAGE_INDEX,
     MESSAGE_SPEAK,
+    MESSAGE_TONE,
+    MESSAGE_WAVE,
 )
 from .channel import Channel
 from .driver_settings import Choice, DriverSettings
@@ -92,6 +103,30 @@ _BEGIN_TIMEOUT_MS = 2000
 # A pause waits this long for the next mark, then stops where NVDA is.
 _PAUSE_TIMEOUT_MS = 1500
 _PAUSE_MARK_PREFIX = "__spd_"
+# NVDA's sounds (source/waves), played by their path relative to NVDA's directory.
+NVDA_WAVES = (
+    "browseMode",
+    "clipboardPush",
+    "clipboardReceive",
+    "connected",
+    "controlled",
+    "controlling",
+    "disconnected",
+    "error",
+    "exit",
+    "focusMode",
+    "screenCurtainOff",
+    "screenCurtainOn",
+    "start",
+    "suggestionsClosed",
+    "suggestionsOpened",
+    "textError",
+)
+# NVDA's beep for capitals (speech/speech.py: BeepCommand(2000, 50)), and a short
+# tone for the sound icons NVDA has no sound for.
+CAPITAL_TONE = {"hz": 2000, "length": 50, "left": 50, "right": 50}
+ICON_TONE = {"hz": 1000, "length": 40, "left": 50, "right": 50}
+CAPITAL_ICON = "capital"
 VOICE_SETTING = "voice"
 GENERIC_VOICE = "NVDA"
 
@@ -129,6 +164,17 @@ def voice_names(choices: list[Choice]) -> dict[str, Choice]:
     return names
 
 
+def sound_icon(name: str) -> tuple[str, dict[str, object]]:
+    """The RDAccess message that plays the sound icon ``name`` on NVDA."""
+    key = name.strip().removesuffix(".wav").casefold()
+    for wave in NVDA_WAVES:
+        if key == wave.casefold():
+            return MESSAGE_WAVE, {"fileName": f"waves\\{wave}.wav"}
+    if key == CAPITAL_ICON:
+        return MESSAGE_TONE, dict(CAPITAL_TONE)
+    return MESSAGE_TONE, dict(ICON_TONE)
+
+
 def _index(index: int) -> list[object]:
     return [COMMAND_INDEX, {"index": index}]
 
@@ -142,6 +188,7 @@ class _Message:
     began: bool = False
     marks_reached: int = 0
     pausing: bool = False
+    capital: bool = False
 
     def pause_mark_ahead(self) -> bool:
         """Whether a mark Speech Dispatcher can resume from is still to come."""
@@ -332,7 +379,11 @@ class Module:
     # Speaking
 
     def _speak(self, kind: str, text: str) -> None:
-        if kind == "SOUND_ICON":
+        if kind == "SOUND_ICON" and self.channel.ready:
+            # Speech Dispatcher sends it once the previous message has ended.
+            message_type, fields = sound_icon(text)
+            LOG.debug("sound icon %r: %s %s", text, message_type, fields)
+            self.channel.send(message_type, **fields)
             self._out("701 BEGIN")
             self._out("702 END")
             return
@@ -359,6 +410,7 @@ class Module:
                 index = self._new_index()
                 message.marks[index] = value
                 sequence.append(_index(index))
+        message.capital = self._capital_icon(kind, items)
         message.end = self._new_index()
         sequence.extend(after)
         sequence.append(_index(message.end))
@@ -377,6 +429,13 @@ class Module:
             self._out("702 END")
             return
         GLib.timeout_add(_BEGIN_TIMEOUT_MS, self._check_begin, message)
+
+    def _capital_icon(self, kind: str, items: list[tuple[str, str]]) -> bool:
+        """A capital letter alone, with Orca's capitalization style "icon"."""
+        if kind not in ("SPEAK", "CHAR") or self._settings.get("cap_let_recogn") != "icon":
+            return False
+        text = "".join(value for item_kind, value in items if item_kind == "text").strip()
+        return len(text) == 1 and text.isupper()
 
     def _check_begin(self, message: _Message) -> bool:
         if self._current is message and not message.began:
@@ -426,6 +485,8 @@ class Module:
             return
         if index == current.begin:
             current.began = True
+            if current.capital:
+                self.channel.send(MESSAGE_TONE, **CAPITAL_TONE)
             self._out("701 BEGIN")
         elif index in current.marks:
             current.marks_reached += 1
@@ -549,6 +610,10 @@ class Module:
             self._apply_settings(client)
             if kind == "CHAR":
                 client.char(text)
+                self._on_local_event(message, speechd.CallbackType.BEGIN, None)
+                self._on_local_event(message, speechd.CallbackType.END, None)
+            elif kind == "SOUND_ICON":
+                client.sound_icon(text)
                 self._on_local_event(message, speechd.CallbackType.BEGIN, None)
                 self._on_local_event(message, speechd.CallbackType.END, None)
             elif kind == "KEY":

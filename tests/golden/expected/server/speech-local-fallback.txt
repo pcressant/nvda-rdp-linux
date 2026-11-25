@@ -47,6 +47,7 @@ step 9: {"module": ["SOUND_ICON", "bell", "."]}
   module <- {"line": "200 OK SPEAKING"}
   module <- {"line": "701 BEGIN"}
   module <- {"line": "702 END"}
+  trace {"src": "ssip", "call": "sound_icon", "args": ["bell"]}
 step 10: {"module": ["SPEAK", "", "."]}
   module <- {"line": "202 OK RECEIVING MESSAGE"}
   module <- {"line": "301 ERROR CANT SPEAK"}

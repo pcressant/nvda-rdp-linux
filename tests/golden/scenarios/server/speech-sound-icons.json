@@ -1,0 +1,221 @@
+{
+  "description": "Sound icons on NVDA: NVDA's own sounds by name as waves, capital and other names as tones; with the capitalization style icon, a capital letter alone gets NVDA's tone for capitals when NVDA begins it, a word or a small letter does not; without NVDA, the session's Speech Dispatcher plays the icon.",
+  "component": "speechd",
+  "steps": [
+    {
+      "accept": "speech"
+    },
+    {
+      "send": "speech",
+      "hex": "11"
+    },
+    {
+      "send": "speech",
+      "hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "attribute": "supportedCommands",
+          "value": [
+            "BreakCommand",
+            "CharacterModeCommand",
+            "IndexCommand",
+            "LangChangeCommand",
+            "PitchCommand",
+            "RateCommand",
+            "VolumeCommand"
+          ],
+          "type": "attribute_value"
+        },
+        {
+          "attribute": "language",
+          "value": "fr_FR",
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "module": [
+        "INIT"
+      ]
+    },
+    {
+      "module": [
+        "AUDIO",
+        "audio_output_method=libao",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "LOGLEVEL",
+        "log_level=3",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SET",
+        "rate=0",
+        "pitch=0",
+        "volume=0",
+        "cap_let_recogn=icon",
+        "language=fr-FR",
+        "synthesis_voice=NULL",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SOUND_ICON",
+        "error",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SOUND_ICON",
+        "TextError.wav",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SOUND_ICON",
+        "capital",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SOUND_ICON",
+        "bell",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "SPEAK",
+        "<speak>A</speak>",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 1,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 2,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "module": [
+        "CHAR",
+        "b",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 3,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 4,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "module": [
+        "SPEAK",
+        "<speak>Avion</speak>",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 5,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 6,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "module": [
+        "SET",
+        "rate=0",
+        "pitch=0",
+        "volume=0",
+        "cap_let_recogn=none",
+        "language=fr-FR",
+        "synthesis_voice=NULL",
+        "."
+      ]
+    },
+    {
+      "module": [
+        "CHAR",
+        "A",
+        "."
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 7,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "index": 8,
+          "type": "index"
+        }
+      ]
+    },
+    {
+      "disconnect": "speech"
+    },
+    {
+      "module": [
+        "SOUND_ICON",
+        "error",
+        "."
+      ]
+    }
+  ]
+}

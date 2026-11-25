@@ -55,6 +55,7 @@ step 18: {"send": "speech", "json": [{"index": 7, "type": "index"}]}
 step 19: {"send": "speech", "json": [{"index": 8, "type": "index"}, {"index": 0, "type": "index"}]}
   module <- {"line": "702 END"}
 step 20: {"module": ["SOUND_ICON", "bell", "."]}
+  speech <- {"json": "{\"hz\": 1000, \"left\": 50, \"length\": 40, \"right\": 50, \"type\": \"tone\"}"}
   module <- {"line": "202 OK RECEIVING MESSAGE"}
   module <- {"line": "200 OK SPEAKING"}
   module <- {"line": "701 BEGIN"}

@@ -1,0 +1,102 @@
+# speech-sound-icons.json: Sound icons on NVDA: NVDA's own sounds by name as waves, capital and other names as tones; with the capitalization style icon, a capital letter alone gets NVDA's tone for capitals when NVDA begins it, a word or a small letter does not; without NVDA, the session's Speech Dispatcher plays the icon.
+startup:
+  trace {"src": "dbus", "call": "ready", "args": [["org.gnome.Mutter.RemoteDesktop", "org.gnome.Orca1.Service"]]}
+step 1: {"accept": "speech"}
+step 2: {"send": "speech", "hex": "11"}
+  speech <- {"hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+step 3: {"send": "speech", "hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  speech <- {"json": "{\"attribute\": \"supportedCommands\", \"type\": \"attribute_request\"}"}
+  speech <- {"json": "{\"attribute\": \"language\", \"type\": \"attribute_request\"}"}
+  speech <- {"json": "{\"channel\": \"NVDA-SPEECH\", \"type\": \"protocol_version\", \"version\": 2}"}
+  trace {"src": "dbus", "call": "get", "args": ["SpeechManager", "Rate"]}
+  trace {"src": "dbus", "call": "get", "args": ["SpeechManager", "Pitch"]}
+  trace {"src": "dbus", "call": "get", "args": ["SpeechManager", "Volume"]}
+step 4: {"send": "speech", "json": [{"attribute": "supportedCommands", "value": ["BreakCommand", "CharacterModeCommand", "IndexCommand", "LangChangeCommand", "PitchCommand", "RateCommand", "VolumeCommand"], "type": "attribute_value"}, {"attribute": "language", "value": "fr_FR", "type": "attribute_value"}]}
+step 5: {"module": ["INIT"]}
+  module <- {"line": "299-nvda-rdp: speech through NVDA over RDP"}
+  module <- {"line": "299 OK LOADED SUCCESSFULLY"}
+step 6: {"module": ["AUDIO", "audio_output_method=libao", "."]}
+  module <- {"line": "207 OK RECEIVING AUDIO SETTINGS"}
+  module <- {"line": "203 OK AUDIO INITIALIZED"}
+step 7: {"module": ["LOGLEVEL", "log_level=3", "."]}
+  module <- {"line": "207 OK RECEIVING LOGLEVEL SETTINGS"}
+  module <- {"line": "203 OK LOGLEVEL SET"}
+step 8: {"module": ["SET", "rate=0", "pitch=0", "volume=0", "cap_let_recogn=icon", "language=fr-FR", "synthesis_voice=NULL", "."]}
+  module <- {"line": "203 OK RECEIVING SETTINGS"}
+  module <- {"line": "203 OK SETTINGS RECEIVED"}
+step 9: {"module": ["SOUND_ICON", "error", "."]}
+  speech <- {"json": "{\"fileName\": \"waves\\\\error.wav\", \"type\": \"wave\"}"}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+  module <- {"line": "701 BEGIN"}
+  module <- {"line": "702 END"}
+step 10: {"module": ["SOUND_ICON", "TextError.wav", "."]}
+  speech <- {"json": "{\"fileName\": \"waves\\\\textError.wav\", \"type\": \"wave\"}"}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+  module <- {"line": "701 BEGIN"}
+  module <- {"line": "702 END"}
+step 11: {"module": ["SOUND_ICON", "capital", "."]}
+  speech <- {"json": "{\"hz\": 2000, \"left\": 50, \"length\": 50, \"right\": 50, \"type\": \"tone\"}"}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+  module <- {"line": "701 BEGIN"}
+  module <- {"line": "702 END"}
+step 12: {"module": ["SOUND_ICON", "bell", "."]}
+  speech <- {"json": "{\"hz\": 1000, \"left\": 50, \"length\": 40, \"right\": 50, \"type\": \"tone\"}"}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+  module <- {"line": "701 BEGIN"}
+  module <- {"line": "702 END"}
+step 13: {"module": ["SPEAK", "<speak>A</speak>", "."]}
+  speech <- {"json": "{\"sequence\": [[\"IndexCommand\", {\"index\": 1}], [\"VolumeCommand\", {\"_multiplier\": 0.5, \"_offset\": 0, \"isDefault\": false}], \"A\", [\"VolumeCommand\", {\"_multiplier\": 1, \"_offset\": 0, \"isDefault\": true}], [\"IndexCommand\", {\"index\": 2}]], \"type\": \"speak\"}"}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+step 14: {"send": "speech", "json": [{"index": 1, "type": "index"}]}
+  speech <- {"json": "{\"hz\": 2000, \"left\": 50, \"length\": 50, \"right\": 50, \"type\": \"tone\"}"}
+  module <- {"line": "701 BEGIN"}
+step 15: {"send": "speech", "json": [{"index": 2, "type": "index"}]}
+  module <- {"line": "702 END"}
+step 16: {"module": ["CHAR", "b", "."]}
+  speech <- {"json": "{\"sequence\": [[\"IndexCommand\", {\"index\": 3}], [\"VolumeCommand\", {\"_multiplier\": 0.5, \"_offset\": 0, \"isDefault\": false}], \"b\", [\"VolumeCommand\", {\"_multiplier\": 1, \"_offset\": 0, \"isDefault\": true}], [\"IndexCommand\", {\"index\": 4}]], \"type\": \"speak\"}"}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+step 17: {"send": "speech", "json": [{"index": 3, "type": "index"}]}
+  module <- {"line": "701 BEGIN"}
+step 18: {"send": "speech", "json": [{"index": 4, "type": "index"}]}
+  module <- {"line": "702 END"}
+step 19: {"module": ["SPEAK", "<speak>Avion</speak>", "."]}
+  speech <- {"json": "{\"sequence\": [[\"IndexCommand\", {\"index\": 5}], [\"VolumeCommand\", {\"_multiplier\": 0.5, \"_offset\": 0, \"isDefault\": false}], \"Avion\", [\"VolumeCommand\", {\"_multiplier\": 1, \"_offset\": 0, \"isDefault\": true}], [\"IndexCommand\", {\"index\": 6}]], \"type\": \"speak\"}"}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+step 20: {"send": "speech", "json": [{"index": 5, "type": "index"}]}
+  module <- {"line": "701 BEGIN"}
+step 21: {"send": "speech", "json": [{"index": 6, "type": "index"}]}
+  module <- {"line": "702 END"}
+step 22: {"module": ["SET", "rate=0", "pitch=0", "volume=0", "cap_let_recogn=none", "language=fr-FR", "synthesis_voice=NULL", "."]}
+  module <- {"line": "203 OK RECEIVING SETTINGS"}
+  module <- {"line": "203 OK SETTINGS RECEIVED"}
+step 23: {"module": ["CHAR", "A", "."]}
+  speech <- {"json": "{\"sequence\": [[\"IndexCommand\", {\"index\": 7}], [\"VolumeCommand\", {\"_multiplier\": 0.5, \"_offset\": 0, \"isDefault\": false}], \"A\", [\"VolumeCommand\", {\"_multiplier\": 1, \"_offset\": 0, \"isDefault\": true}], [\"IndexCommand\", {\"index\": 8}]], \"type\": \"speak\"}"}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+step 24: {"send": "speech", "json": [{"index": 7, "type": "index"}]}
+  module <- {"line": "701 BEGIN"}
+step 25: {"send": "speech", "json": [{"index": 8, "type": "index"}]}
+  module <- {"line": "702 END"}
+step 26: {"disconnect": "speech"}
+step 27: {"module": ["SOUND_ICON", "error", "."]}
+  module <- {"line": "202 OK RECEIVING MESSAGE"}
+  module <- {"line": "200 OK SPEAKING"}
+  module <- {"line": "701 BEGIN"}
+  module <- {"line": "702 END"}
+  trace {"src": "ssip", "call": "connect", "args": [["nvda-rdp"], {"component": "fallback"}]}
+  trace {"src": "ssip", "call": "set_data_mode", "args": ["ssml"]}
+  trace {"src": "ssip", "call": "set_rate", "args": [0]}
+  trace {"src": "ssip", "call": "set_pitch", "args": [0]}
+  trace {"src": "ssip", "call": "set_volume", "args": [0]}
+  trace {"src": "ssip", "call": "set_language", "args": ["fr-FR"]}
+  trace {"src": "ssip", "call": "sound_icon", "args": ["error"]}
+shutdown:
+  trace {"src": "ssip", "call": "close", "args": []}
+returncode: 0

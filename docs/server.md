@@ -274,6 +274,12 @@ NVDA; once the user has logged in, the session is served the same way.
   speak through NVDA. Orca does not use the following, but they do:
   * a pause stops at the end of the current sentence, and speech resumes
     from there.
+  * a sound icon named like one of NVDA's sounds (`error`, `start`,
+    `browseMode`...) plays it on NVDA; other names play a short tone.
+* With Orca's capitalization style "Icon", a capital letter read alone is
+  preceded by NVDA's tone for capitals. Orca's other sounds (role sounds,
+  progress bar beeps) are played in the session and heard through RDP's
+  audio, not through NVDA: NVDA can only play tones and its own sound files.
 * Ordinary keyboard and audio are RDP's own.
 * If `mstsc` is closed, the session stays open; a new connection to the same
   account joins it.

@@ -293,6 +293,13 @@ connecté, sa session est servie de la même façon.
   parlent aussi par NVDA. Orca ne se sert pas de ce qui suit, eux si :
   * une pause s'arrête à la fin de la phrase en cours, et la parole reprend
     à partir de là.
+  * une icône sonore nommée comme un des sons de NVDA (`error`, `start`,
+    `browseMode`...) le joue sur NVDA ; les autres noms jouent un bip court.
+* Avec le style de majuscules « Icône » d'Orca, une majuscule lue seule est
+  précédée du bip des majuscules de NVDA. Les autres sons d'Orca (sons des
+  rôles, bips des barres de progression) sont joués dans la session et
+  s'entendent par l'audio de RDP, pas par NVDA : NVDA ne sait jouer que des
+  bips et ses propres fichiers son.
 * Le clavier ordinaire et l'audio sont ceux de RDP.
 * Si `mstsc` est fermé, la session reste ouverte ; une nouvelle connexion au
   même compte la rejoint.

@@ -109,6 +109,13 @@ nor reconfigured.
 * A drop-in of `orca.service` pulls in the three units, orders Orca after them
   and reads `orca.env`.
 
+Both channels answer the client's `timeSinceInput` request with the time
+since the session's last input, read from Mutter's
+`org.gnome.Mutter.IdleMonitor` D-Bus interface. As RDAccess does, the answer
+is 0 during the 4 seconds after the client attaches, and also 0 without
+Mutter. The client takes the remote session as focused while this time is
+at most 200 ms.
+
 The shared code (`nvda_rdp_linux/common/`) is the one the client uses: frames,
 RDAccess wire format, speech and braille vocabulary. The server side plays the
 RDAccess server role, the one NVDA plays on Windows.

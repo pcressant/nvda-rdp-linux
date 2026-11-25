@@ -1,0 +1,62 @@
+{
+  "description": "Speech: timeSinceInput is 0 for 4 s after each attach, then Mutter's idle time of the session.",
+  "component": "speechd",
+  "fake": {
+    "idle_time": 1500
+  },
+  "steps": [
+    {
+      "accept": "speech"
+    },
+    {
+      "send": "speech",
+      "hex": "11"
+    },
+    {
+      "send": "speech",
+      "hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "attribute": "timeSinceInput",
+          "type": "attribute_request"
+        }
+      ]
+    },
+    {
+      "sleep": 4.2
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "attribute": "timeSinceInput",
+          "type": "attribute_request"
+        }
+      ]
+    },
+    {
+      "send": "speech",
+      "hex": "13"
+    },
+    {
+      "send": "speech",
+      "hex": "11"
+    },
+    {
+      "send": "speech",
+      "hex": "53 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "send": "speech",
+      "json": [
+        {
+          "attribute": "timeSinceInput",
+          "type": "attribute_request"
+        }
+      ]
+    }
+  ]
+}

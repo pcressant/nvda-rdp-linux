@@ -42,7 +42,11 @@ from typing import Any
 import speechd
 from gi.repository import GLib
 
-from ..common.rdaccess import MESSAGE_ATTRIBUTE_REQUEST
+from ..common.rdaccess import (
+    ATTRIBUTE_TIME_SINCE_INPUT,
+    MESSAGE_ATTRIBUTE_REQUEST,
+    MESSAGE_ATTRIBUTE_VALUE,
+)
 from ..common.speech import (
     ATTRIBUTE_LANGUAGE,
     ATTRIBUTE_SUPPORTED_COMMANDS,
@@ -54,6 +58,7 @@ from ..common.speech import (
     MESSAGE_SPEAK,
 )
 from .channel import Channel
+from .input_time import InputTime
 from .orca_speech import OrcaSpeech
 from .prosody import NEUTRAL, prosody_commands, reset_commands
 
@@ -113,6 +118,7 @@ class Module:
         self._local: Any = None
         self._base = dict(NEUTRAL)
         self.orca = OrcaSpeech()
+        self._input_time = InputTime()
         self._loop = GLib.MainLoop()
 
     # Main loop
@@ -298,7 +304,19 @@ class Module:
         return GLib.SOURCE_REMOVE
 
     def _on_channel_message(self, message: dict[str, Any]) -> None:
-        if message.get("type") != MESSAGE_INDEX:
+        kind = message.get("type")
+        if (
+            kind == MESSAGE_ATTRIBUTE_REQUEST
+            and message.get("attribute") == ATTRIBUTE_TIME_SINCE_INPUT
+        ):
+            # The client takes the remote session as focused while this is at most 200 ms.
+            self.channel.send(
+                MESSAGE_ATTRIBUTE_VALUE,
+                attribute=ATTRIBUTE_TIME_SINCE_INPUT,
+                value=self._input_time.since_input(self.channel.attached_at),
+            )
+            return
+        if kind != MESSAGE_INDEX:
             return
         index = message.get("index")
         LOG.debug("NVDA index %s", index)

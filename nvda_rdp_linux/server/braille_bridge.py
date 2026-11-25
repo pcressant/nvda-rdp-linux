@@ -40,6 +40,7 @@ from ..common.rdaccess import (
 from .braille_input import BrailleInput
 from .brlapi_server import BrlapiServer, Write
 from .channel import Channel
+from .input_time import InputTime
 from .mutter_input import MutterKeyInjector
 from .orca_braille import OrcaBrailleSettings
 
@@ -82,6 +83,7 @@ class BrailleBridge:
         self.input = BrailleInput(
             self._send_command, lambda: computer_table(tablesdir), MutterKeyInjector()
         )
+        self._input_time = InputTime()
         self._num_cells = 0
         self._last_write: Write | None = None
         self._cursor = 0
@@ -181,9 +183,11 @@ class BrailleBridge:
         kind = message.get("type")
         if kind == MESSAGE_ATTRIBUTE_REQUEST:
             if message.get("attribute") == ATTRIBUTE_TIME_SINCE_INPUT:
-                # Required for the client to show cells (draft experiment 02).
+                # The client takes the remote session as focused while this is at most 200 ms.
                 self.channel.send(
-                    MESSAGE_ATTRIBUTE_VALUE, attribute=ATTRIBUTE_TIME_SINCE_INPUT, value=0
+                    MESSAGE_ATTRIBUTE_VALUE,
+                    attribute=ATTRIBUTE_TIME_SINCE_INPUT,
+                    value=self._input_time.since_input(self.channel.attached_at),
                 )
         elif kind == MESSAGE_ATTRIBUTE_VALUE:
             if message.get("attribute") == ATTRIBUTE_NUM_CELLS:

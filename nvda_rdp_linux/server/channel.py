@@ -19,6 +19,7 @@ from __future__ import annotations
 import logging
 import os
 import socket
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -90,6 +91,8 @@ class Channel:
         self._json_mode = False
         self.ready = False
         self.attributes: dict[str, Any] = {}
+        # time.monotonic() of the client's last XON, None while detached.
+        self.attached_at: float | None = None
 
     # Lifecycle
 
@@ -147,6 +150,7 @@ class Channel:
             self._sock = None
             LOG.info("%s: channel closed", self.name)
         got_xon = self._got_xon
+        self.attached_at = None
         self._set_ready(False)
         if retry:
             self._schedule_retry(RETRY_SECONDS if got_xon else RETRY_SECONDS_NO_CLIENT)
@@ -219,6 +223,7 @@ class Channel:
                     self._on_xon()
                 else:
                     LOG.info("%s: RDAccess client detached", self.name)
+                    self.attached_at = None
                     self._json_mode = False
                     self._set_ready(False)
             elif isinstance(item, LegacyFrame):
@@ -231,6 +236,7 @@ class Channel:
     def _on_xon(self) -> None:
         LOG.info("%s: RDAccess client attached", self.name)
         self._got_xon = True
+        self.attached_at = time.monotonic()
         self._json_mode = False
         self._set_ready(False)
         self._send_payload(legacy_protocol_version_frame(self._driver_type))

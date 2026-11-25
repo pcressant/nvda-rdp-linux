@@ -118,6 +118,13 @@ machine ne sont ni arrêtés ni reconfigurés.
 * Un drop-in de `orca.service` entraîne les trois unités, place Orca après
   elles et lit `orca.env`.
 
+Les deux canaux répondent à la requête `timeSinceInput` du client par le
+délai depuis la dernière entrée de la session, lu par l'interface D-Bus
+`org.gnome.Mutter.IdleMonitor` de Mutter. Comme RDAccess, la réponse vaut 0
+pendant les 4 secondes qui suivent l'attachement du client, et aussi en
+l'absence de Mutter. Le client considère que la session distante a le focus
+tant que ce délai ne dépasse pas 200 ms.
+
 Le code partagé (`nvda_rdp_linux/common/`) est celui qu'utilise le client :
 trames, format RDAccess, vocabulaire de la parole et du braille. Le côté
 serveur joue le rôle de serveur RDAccess, celui que NVDA joue sous Windows.

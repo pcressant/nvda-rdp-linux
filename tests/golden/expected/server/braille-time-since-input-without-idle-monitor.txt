@@ -1,0 +1,17 @@
+# braille-time-since-input-without-idle-monitor.json: Braille: without Mutter's idle monitor, timeSinceInput stays 0 after the 4 s that follow the attach.
+startup:
+  trace {"src": "dbus", "call": "ready", "args": [["org.gnome.Mutter.RemoteDesktop", "org.gnome.Orca1.Service"]]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractedBrailleIsEnabled"]}
+  trace {"src": "dbus", "call": "get", "args": ["BraillePresenter", "ContractionTable"]}
+step 1: {"accept": "braille"}
+step 2: {"send": "braille", "hex": "11"}
+  braille <- {"hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+step 3: {"send": "braille", "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"}
+  braille <- {"json": "{\"attribute\": \"numCells\", \"type\": \"attribute_request\"}"}
+  braille <- {"json": "{\"attribute\": \"gestureMap\", \"type\": \"attribute_request\"}"}
+  braille <- {"json": "{\"channel\": \"NVDA-BRAILLE\", \"type\": \"protocol_version\", \"version\": 2}"}
+step 4: {"sleep": 4.2}
+step 5: {"send": "braille", "json": [{"attribute": "timeSinceInput", "type": "attribute_request"}]}
+  braille <- {"json": "{\"attribute\": \"timeSinceInput\", \"type\": \"attribute_value\", \"value\": 0}"}
+shutdown:
+returncode: 0

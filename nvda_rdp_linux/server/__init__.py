@@ -1,7 +1,8 @@
 """Server role: Orca, in a GNOME session reached over RDP, speaking and
 showing braille through NVDA on the RDP client machine.
 
-* ``channel``: the server side of one RDAccess channel, on the GLib loop;
+* ``channel``: the server side of one RDAccess channel, on the GLib loop,
+  with the session's time since input for both channels (``input_time``);
 * ``speechd_module``: a Speech Dispatcher output module that speaks through
   NVDA, with per-utterance prosody (``prosody``, ``orca_speech``);
 * ``brlapi_server``: a BrlAPI server that offers the client's braille display

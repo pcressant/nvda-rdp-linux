@@ -8,7 +8,10 @@ Run on an isolated session bus started by the harness, never on the user's:
   ``orca_speech`` and ``orca_braille``; option ``orca`` false leaves the name
   unowned, as when Orca is not running;
 * ``org.gnome.Mutter.RemoteDesktop``: ``CreateSession`` and the session's
-  ``Start``, ``NotifyKeyboardKeysym``, ``NotifyKeyboardKeycode`` and ``Stop``.
+  ``Start``, ``NotifyKeyboardKeysym``, ``NotifyKeyboardKeycode`` and ``Stop``;
+* ``org.gnome.Mutter.IdleMonitor``: ``GetIdletime`` of the ``Core`` monitor,
+  answering option ``idle_time`` (milliseconds); without that option the
+  name stays unowned.
 
 Property reads and method calls are recorded in the golden trace.  The
 control file ``dbus-properties`` changes properties while running, one
@@ -32,6 +35,8 @@ ORCA_PATH = "/org/gnome/Orca1/Service/"
 MUTTER_NAME = "org.gnome.Mutter.RemoteDesktop"
 MUTTER_PATH = "/org/gnome/Mutter/RemoteDesktop"
 MUTTER_SESSION_PATH = "/org/gnome/Mutter/RemoteDesktop/Session/golden"
+IDLE_MONITOR_NAME = "org.gnome.Mutter.IdleMonitor"
+IDLE_MONITOR_PATH = "/org/gnome/Mutter/IdleMonitor/Core"
 POLL_MS = 20
 
 ORCA_OBJECTS = {
@@ -61,6 +66,14 @@ MUTTER_SESSION_XML = """
     <method name="NotifyKeyboardKeycode">
       <arg type="u" direction="in"/><arg type="b" direction="in"/>
     </method>
+  </interface>
+</node>
+"""
+
+IDLE_MONITOR_XML = """
+<node>
+  <interface name="org.gnome.Mutter.IdleMonitor">
+    <method name="GetIdletime"><arg type="t" direction="out"/></method>
   </interface>
 </node>
 """
@@ -101,6 +114,10 @@ class Services:
             info = Gio.DBusNodeInfo.new_for_xml(MUTTER_SESSION_XML).interfaces[0]
             self.bus.register_object(MUTTER_SESSION_PATH, info, self._mutter_call, None, None)
             names.append(MUTTER_NAME)
+        if golden_trace.option("idle_time", None) is not None:
+            info = Gio.DBusNodeInfo.new_for_xml(IDLE_MONITOR_XML).interfaces[0]
+            self.bus.register_object(IDLE_MONITOR_PATH, info, self._idle_call, None, None)
+            names.append(IDLE_MONITOR_NAME)
         return names
 
     def _orca_property(self, name: str):
@@ -116,6 +133,10 @@ class Services:
             invocation.return_value(GLib.Variant("(o)", (MUTTER_SESSION_PATH,)))
         else:
             invocation.return_value(None)
+
+    def _idle_call(self, _bus, _sender, path, _interface, method, _parameters, invocation):
+        golden_trace.record("dbus", method, path)
+        invocation.return_value(GLib.Variant("(t)", (golden_trace.option("idle_time", 0),)))
 
     def poll_controls(self) -> bool:
         for change in self.controls.pop_all():

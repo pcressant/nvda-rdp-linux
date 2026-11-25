@@ -90,7 +90,11 @@ class BrailleBridge:
         )
         self.settings = OrcaBrailleSettings(tablesdir, self._render_again)
         self.input = BrailleInput(
-            self._send_command, lambda: computer_table(tablesdir), MutterKeyInjector()
+            self._send_command,
+            lambda: computer_table(tablesdir),
+            MutterKeyInjector(),
+            self._input_contraction_table,
+            self._render_again,
         )
         self._input_time = InputTime()
         self._num_cells = 0
@@ -108,6 +112,12 @@ class BrailleBridge:
         self.channel.stop()
         self.server.stop()
         self.input.injector.close()
+
+    def _input_contraction_table(self) -> str | None:
+        """Orca's contraction table while contracted braille is on, for typing."""
+        if not self.settings.contracted:
+            return None
+        return self.settings.contraction_table() or None
 
     # Size
 
@@ -188,8 +198,15 @@ class BrailleBridge:
             for i, value in enumerate(write.or_mask[: size - begin]):
                 cells[begin + i] |= value
         # BrlAPI cursor: 0 for none, else the 1-based cell.
-        if 0 < self._cursor <= size:
-            cells[self._cursor - 1] |= CURSOR_DOTS
+        cursor = self._cursor
+        pending = self.input.pending
+        if pending and 0 < cursor <= size:
+            # Contracted input not translated yet: shown at the cursor, which
+            # moves after it, as NVDA shows its input buffer.
+            cells = (cells[: cursor - 1] + pending + cells[cursor - 1 :])[:size]
+            cursor += len(pending)
+        if 0 < cursor <= size:
+            cells[cursor - 1] |= CURSOR_DOTS
         return cells
 
     # Channel
@@ -201,6 +218,7 @@ class BrailleBridge:
             self._dimensions = {}
             self._last_cells = None
             self.input.clear_gesture_map()
+            self.input.discard_pending()
             return
         # Ask for the size, as RDAccess's remote braille driver does on init
         # (rdAccess@19f5c53: addon/brailleDisplayDrivers/remote.py:28-32):

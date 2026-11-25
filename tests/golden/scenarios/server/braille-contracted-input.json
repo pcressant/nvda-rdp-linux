@@ -1,0 +1,247 @@
+{
+  "description": "Contracted braille input with Orca's contraction table: cells wait, shown at the cursor, and are typed as a word on space, Enter, dots 7-8 or another action; dot 7 removes the last waiting cell.",
+  "component": "brlapi",
+  "fake": {
+    "orca_braille": {
+      "ContractedBrailleIsEnabled": true,
+      "ContractionTable": "fr-bfu-g2"
+    }
+  },
+  "steps": [
+    {
+      "accept": "braille"
+    },
+    {
+      "send": "braille",
+      "hex": "11"
+    },
+    {
+      "send": "braille",
+      "hex": "42 40 12 00 60 70 72 6f 74 6f 63 6f 6c 56 65 72 73 69 6f 6e 60 02"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "numCells",
+          "value": 40,
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "connect"
+    },
+    {
+      "orca": "enter"
+    },
+    {
+      "orca": "accept_commands"
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "attribute": "gestureMap",
+          "value": [
+            "GlobalGestureMap",
+            {
+              "globalCommands.GlobalCommands": {
+                "braille_nextLine": "br(brltty):lndn"
+              }
+            }
+          ],
+          "type": "attribute_value"
+        }
+      ]
+    },
+    {
+      "orca": "write",
+      "text": "ok",
+      "cursor": 3
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 3,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 26,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 64,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 26,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 0,
+          "space": true,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 13,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 30,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 192,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 3,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 128,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 3,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "lndn",
+          "routingIndex": null,
+          "model": "al",
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "send": "braille",
+      "json": [
+        {
+          "source": "brltty",
+          "id": "passdots",
+          "routingIndex": null,
+          "model": "al",
+          "dots": 64,
+          "space": false,
+          "type": "braille_input"
+        }
+      ]
+    },
+    {
+      "orca": "keys"
+    }
+  ]
+}

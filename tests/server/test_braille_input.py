@@ -125,3 +125,87 @@ def test_char_keysym() -> None:
     assert char_keysym("é") == 0xE9
     assert char_keysym("€") == 0x01000000 + 0x20AC
     assert char_keysym("\n") == KEY_NAMES["enter"]
+
+
+@pytest.fixture
+def contracted(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("LANG", "fr_FR.UTF-8")
+    commands: list[tuple[int, int]] = []
+    injector = FakeInjector()
+    tables = default_tablesdir()
+    table = [f"{tables}/fr-bfu-g2.ctb"]
+    changes: list[list[int]] = []
+    handler = BrailleInput(
+        lambda command, argument: commands.append((command, argument)),
+        lambda: computer_table(tables),
+        injector,
+        lambda: table[0],
+        lambda: changes.append(handler.pending),
+    )
+    handler.set_gesture_map(GESTURE_MAP)
+    return handler, commands, injector, table, changes
+
+
+def typed(injector: FakeInjector) -> str:
+    return "".join(chr(keysyms[0]) for keysyms in injector.presses)
+
+
+def test_contracted_cells_wait_and_are_typed_as_a_word(contracted) -> None:
+    handler, _commands, injector, _table, changes = contracted
+    handler.handle(dots(0x03))
+    handler.handle(dots(0x1A))
+    assert injector.presses == []
+    assert handler.pending == [0x03, 0x1A]
+    handler.handle(dots(0, space=True))
+    assert typed(injector) == "bonjour "
+    assert handler.pending == []
+    assert changes == [[0x03], [0x03, 0x1A], []]
+
+
+def test_contracted_erase_removes_a_waiting_cell_first(contracted) -> None:
+    handler, _commands, injector, _table, _changes = contracted
+    handler.handle(dots(0x03))
+    handler.handle(dots(0x40))
+    assert handler.pending == []
+    assert injector.presses == []
+    handler.handle(dots(0x40))
+    assert injector.presses == [[KEY_NAMES["backspace"]]]
+
+
+def test_contracted_translate_and_other_actions_type_the_word(contracted) -> None:
+    handler, commands, injector, _table, _changes = contracted
+    handler.handle(dots(0x03))
+    handler.handle(dots(0xC0))
+    assert typed(injector) == "bien"
+    injector.presses.clear()
+    handler.handle(dots(0x03))
+    handler.handle(key("fwinlt"))
+    assert typed(injector) == "bien"
+    assert commands == [(KEY_CMD_FWINLT, 0)]
+
+
+def test_a_new_table_types_the_word_of_the_old_one(contracted) -> None:
+    handler, _commands, injector, table, _changes = contracted
+    handler.handle(dots(0x03))
+    table[0] = f"{default_tablesdir()}/en-ueb-g2.ctb"
+    handler.handle(dots(0x2E))
+    assert typed(injector) == "bien"
+    assert handler.pending == [0x2E]
+    handler.flush()
+    assert typed(injector) == "bienthe"
+
+
+def test_contracted_off_types_each_cell_at_once(contracted) -> None:
+    handler, _commands, injector, table, _changes = contracted
+    table[0] = None
+    handler.handle(dots(0x01))
+    assert injector.presses == [[ord("a")]]
+    assert handler.pending == []
+
+
+def test_discarded_cells_are_not_typed(contracted) -> None:
+    handler, _commands, injector, _table, _changes = contracted
+    handler.handle(dots(0x03))
+    handler.discard_pending()
+    handler.flush()
+    assert injector.presses == []

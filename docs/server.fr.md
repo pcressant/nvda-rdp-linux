@@ -334,6 +334,13 @@ peut manquer l'unité d'un processus bref. Les lignes des utilisateurs des
   d'environ 2 secondes, car Orca ne lit la taille qu'une fois. Ce n'est pas
   le cas si la plage est d'abord retirée : Orca attend alors une taille et
   prend celle de la plage suivante en moins d'une demi-seconde.
+* La saisie braille utilise les tables d'Orca, pas la table de saisie de
+  NVDA, que RDAccess ne transmet pas : la table abrégée d'Orca quand le
+  braille abrégé y est activé, sinon le braille informatique. En abrégé,
+  les cellules attendent, affichées au curseur, qu'un espace, Entrée, les
+  points 7-8 ou une autre action saisissent le mot ; le point 7 retire la
+  dernière cellule en attente. Contrairement à NVDA, un mot déjà saisi
+  n'est pas retraduit quand on le complète.
 * Orca gère une seule ligne braille. Une plage de plusieurs rangées lui est
   présentée comme une ligne de toutes ses cellules, remplie rangée après
   rangée, comme RDAccess les envoie.

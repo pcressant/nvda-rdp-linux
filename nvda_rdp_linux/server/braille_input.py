@@ -12,13 +12,22 @@
 3. The script name decides what happens:
    - ``kb:<keys>``: a key press, injected through Mutter;
    - braille navigation scripts: a BrlAPI command for Orca;
-   - ``braille_dots`` or plain dots: one character, back-translated with
-     liblouis (uncontracted, one cell at a time), typed through Mutter.
+   - ``braille_dots`` or plain dots: typed through Mutter after
+     back-translation with liblouis, as NVDA's braille input does
+     (nvda@bfe9a2e: source/brailleInput.py):
+     - contracted braille off in Orca: each cell at once, with a computer
+       braille table;
+     - contracted braille on: with Orca's contraction table, the cells wait
+       until a space, Enter, dots 7-8 (``braille_translate``) or any other
+       action, then the word is typed.  Dot 7 (``braille_eraseLastCell``)
+       removes the last waiting cell, or erases a typed character when none
+       waits.  The waiting cells are shown at the cursor, as NVDA does.
 """
 
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Callable
 from typing import Any, Protocol
 
@@ -27,6 +36,8 @@ import louis
 from ..common.braille import dots_gesture, normalize_gesture
 
 LOG = logging.getLogger(__name__)
+
+_UNTRANSLATED = re.compile(r"\\[0-9]+/")
 
 # Generic braille keyboard bindings of NVDA's global commands.
 GENERIC_BINDINGS = {
@@ -107,11 +118,25 @@ class BrailleInput:
         send_orca_command: Callable[[int, int], None],
         input_table: Callable[[], str],
         injector: KeyInjector,
+        contraction_table: Callable[[], str | None] = lambda: None,
+        on_pending_changed: Callable[[], None] = lambda: None,
     ) -> None:
         self._send_orca_command = send_orca_command
         self._input_table = input_table
+        self._contraction_table = contraction_table
+        self._on_pending_changed = on_pending_changed
         self.injector = injector
         self._bindings: dict[str, str] = {}
+        self._pending: list[int] = []
+        self._pending_table = ""
+
+    @property
+    def pending(self) -> list[int]:
+        """The cells typed in contracted braille and not translated yet."""
+        return list(self._pending)
+
+    def discard_pending(self) -> None:
+        self._pending = []
 
     def set_gesture_map(self, value: Any) -> None:
         """Value as JSON-encoded by RDAccess: ``[GESTURE_MAP_TYPE, export()]``."""
@@ -158,6 +183,19 @@ class BrailleInput:
         space = bool(message.get("space"))
         LOG.debug("key %s dots=%#x space=%s: %s", message.get("id"), dots, space, script)
 
+        cell = script in (None, "braille_dots") and "dots" in message and not (space and dots)
+        if cell and dots:
+            table = self._contraction_table()
+            if table:
+                self._wait(dots, table)
+                return
+        if script == "braille_eraseLastCell" and self._pending:
+            self._pending.pop()
+            self._on_pending_changed()
+            return
+        # Anything else types the waiting word first.
+        self.flush()
+
         routing_index = message.get("routingIndex")
         if script == "braille_routeTo" and isinstance(routing_index, int):
             self._send_orca_command(KEY_CMD_ROUTE, routing_index)
@@ -170,8 +208,8 @@ class BrailleInput:
         elif script == "braille_enter":
             self.injector.press([KEY_NAMES["enter"]])
         elif script == "braille_translate":
-            pass  # Uncontracted input is typed at once; nothing to translate.
-        elif script in (None, "braille_dots") and "dots" in message and not (space and dots):
+            pass  # The waiting word, if any, is typed above.
+        elif cell:
             self._type_cell(dots)
         else:
             LOG.debug("no action for script %s", script)
@@ -190,6 +228,27 @@ class BrailleInput:
                 LOG.warning("unknown key name %s in gesture kb:%s", name, keys)
                 return
         self.injector.press(keysyms)
+
+    def _wait(self, dots: int, table: str) -> None:
+        if self._pending and table != self._pending_table:
+            self.flush()
+        self._pending_table = table
+        self._pending.append(dots)
+        self._on_pending_changed()
+
+    def flush(self) -> None:
+        """Type the waiting cells, back-translated as one word."""
+        if not self._pending:
+            return
+        cells = "".join(chr(0x8000 | dots) for dots in self._pending)
+        self._pending = []
+        self._on_pending_changed()
+        text = louis.backTranslateString([self._pending_table], cells, mode=louis.dotsIO)
+        LOG.debug("contracted word: %r", text)
+        # liblouis writes dots it cannot translate as a backslash, the dots and a slash.
+        text = _UNTRANSLATED.sub("", text)
+        for char in text:
+            self.injector.press([char_keysym(char)])
 
     def _type_cell(self, dots: int) -> None:
         if dots == 0:

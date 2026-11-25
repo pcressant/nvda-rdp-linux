@@ -312,6 +312,12 @@ system journal; read them as root.
   because Orca reads the size only once. A display that is removed first
   does not: Orca then waits for a size and takes the next display's within
   half a second.
+* Braille typing uses Orca's braille tables, not NVDA's input table, which
+  RDAccess does not pass on: Orca's contraction table while contracted
+  braille is on in Orca, else computer braille. Contracted cells wait,
+  shown at the cursor, until a space, Enter, dots 7-8 or another action
+  types the word; dot 7 removes the last waiting cell. Unlike NVDA, a word
+  already typed is not translated again when it is continued.
 * Orca handles one braille line. A display of several rows is offered as
   one line of all its cells, filled row after row, as RDAccess sends them.
 * Say all stops on a disconnection.

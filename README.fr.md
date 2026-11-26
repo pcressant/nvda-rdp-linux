@@ -106,6 +106,9 @@ braille d'Orca sur l'écran de connexion à distance parviennent au client et
 que l'écran de connexion local n'est pas modifié. Des essais manuels depuis Windows, avec
 NVDA, RDAccess et `mstsc`, braille compris, ont réussi avec les paquets de ce
 dépôt sous NixOS (`services.nvda-rdp-server`), Arch Linux et Debian forky.
+L'usage quotidien depuis la 0.4.0 a confirmé l'affichage et la saisie en
+braille abrégé et les réglages de la plage braille de NVDA ; Verr. Maj. n'est
+pas synchronisé.
 
 Voir [docs/server.fr.md](docs/server.fr.md) et `man nvda-rdp-server`.
 
@@ -114,11 +117,12 @@ Voir [docs/server.fr.md](docs/server.fr.md) et `man nvda-rdp-server`.
 | | Client | Serveur |
 | --- | --- | --- |
 | NixOS | `overlays.default` : `nvda-rdp-client`, `freerdp-with-nvda-rdp`, `remmina-with-nvda-rdp` | `nixosModules.server` : `services.nvda-rdp-server.enable` |
-| Arch Linux (AUR) | `nvda-rdp-client-git` | `nvda-rdp-server-git` |
+| Arch Linux (`makepkg`) | `nvda-rdp-client-git` | `nvda-rdp-server-git` |
 | Debian forky | `nvda-rdp-common`, `nvda-rdp-freerdp-plugin`, `nvda-rdp-client` | `nvda-rdp-common`, `nvda-rdp-server` |
 
-L'AUR n'a que le PKGBUILD ; les paquets Debian sont les fichiers `.deb` des
-versions publiées. Debian 13 n'est pas pris en charge. Construction, tests
+Sous Arch Linux, les paquets se construisent avec `makepkg` depuis
+`packaging/arch/` ; les paquets Debian sont les fichiers `.deb` des versions
+publiées. Debian 13 n'est pas pris en charge. Construction, tests
 en VM, publication et autres distributions :
 [docs/packaging.fr.md](docs/packaging.fr.md).
 

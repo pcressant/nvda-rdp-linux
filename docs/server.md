@@ -35,6 +35,14 @@ braille included, passed with these packages on NixOS (the
 forky. Braille keys and typing from the client's display, and failure cases,
 are not covered by the automated tests.
 
+After the additions that followed 0.4.0, daily use from Windows with NVDA,
+RDAccess, `mstsc` and one braille display confirmed contracted braille
+output, contracted braille typing, and NVDA's braille display settings, with
+no problem seen. The other additions (`timeSinceInput`, displays of several
+rows, model-specific gestures, NVDA's voices in Orca, pause at a sentence
+mark, sound icons, languages and breaks within a message) are covered by the
+golden tests but have not each been checked in a real session.
+
 ## Requirements
 
 * GNOME 49 or later: GDM, GNOME Remote Desktop and Orca. From GNOME 49 on,
@@ -150,8 +158,8 @@ GNOME Remote Desktop are configured as usual (see below).
 
 ### Arch Linux
 
-`nvda-rdp-server-git` is built by the PKGBUILD published on the AUR
-(`packaging/arch/PKGBUILD`), with any AUR helper or with `makepkg -si`.
+`nvda-rdp-server-git` is built with `makepkg` from `packaging/arch/`
+of a clone of the repository (see [packaging.md](packaging.md)).
 
 ### Debian forky
 
@@ -369,6 +377,9 @@ system journal; read them as root.
 * Orca handles one braille line. A display of several rows is offered as
   one line of all its cells, filled row after row, as RDAccess sends them.
 * Say all stops on a disconnection.
+* Caps Lock is not synchronized: the server does not answer RDAccess's
+  `capsLockToggle`, so the Caps Lock state of the remote session and of
+  Windows can differ.
 
 ## Design notes from the study
 

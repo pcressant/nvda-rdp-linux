@@ -104,22 +104,29 @@ cette locale n'est pas installée ; les VM de construction la génèrent. Sans
 la locale, le serveur BrlAPI se rabat sur la locale C avec un avertissement,
 comme Orca.
 
-## Arch Linux : AUR
+## Arch Linux : PKGBUILD
 
-Seuls `packaging/arch/PKGBUILD` et `packaging/arch/.SRCINFO` sont publiés sur
-l'AUR ; les utilisateurs construisent eux-mêmes les paquets.
-`nix run .#build-arch` ne sert qu'à valider le PKGBUILD.
+Le projet n'est pas sur l'AUR : les utilisateurs construisent eux-mêmes les
+paquets avec `makepkg` depuis `packaging/arch/` d'un clone du dépôt :
+
+```bash
+git clone https://github.com/pcressant/nvda-rdp-linux.git
+cd nvda-rdp-linux/packaging/arch
+makepkg -s
+sudo pacman -U nvda-rdp-common-git-*.pkg.tar.zst \
+  nvda-rdp-freerdp-plugin-git-*.pkg.tar.zst \
+  nvda-rdp-client-git-*.pkg.tar.zst    # client
+sudo pacman -U nvda-rdp-common-git-*.pkg.tar.zst \
+  nvda-rdp-server-git-*.pkg.tar.zst    # serveur
+```
 
 Le PKGBUILD construit la branche par défaut du dépôt GitHub
-(`git+$url.git`). Pour publier :
-
-1. pousser les modifications sur la branche par défaut ;
-2. si le PKGBUILD a changé : lancer `nix run .#build-arch`, qui construit
-   l'arbre de travail en remplaçant la source du PKGBUILD par une copie
-   locale, et copier `dist/arch/SRCINFO` vers `packaging/arch/.SRCINFO` quand
-   la construction le signale comme périmé ;
-3. copier `PKGBUILD` et `.SRCINFO` dans le dépôt AUR `nvda-rdp-linux-git` et
-   le pousser.
+(`git+$url.git`), pas l'arbre de travail du clone. `nix run .#build-arch` ne
+sert qu'à valider le PKGBUILD : il construit l'arbre de travail en
+remplaçant la source du PKGBUILD par une copie locale. Quand le PKGBUILD
+change, le lancer et copier `dist/arch/SRCINFO` vers
+`packaging/arch/.SRCINFO` quand la construction le signale comme périmé,
+puis pousser les modifications sur la branche par défaut.
 
 `pkgver` est calculé à partir de Git : depuis la dernière étiquette
 (`vX.Y.Z` donne `X.Y.Z.rN.gHASH`), ou, tant que le dépôt n'a pas

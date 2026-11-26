@@ -267,8 +267,8 @@ Arch Linux and Debian have four packages: `nvda-rdp-common`,
 `nvda-rdp-freerdp-plugin`, `nvda-rdp-client` and `nvda-rdp-server` (`-git`
 on Arch). The client needs the first three:
 
-* Arch Linux: `nvda-rdp-client-git` from the AUR, built from
-  `packaging/arch/PKGBUILD`; it replaces the former single package
+* Arch Linux: `nvda-rdp-client-git`, built with `makepkg` from `packaging/arch/`
+  of a clone of the repository; it replaces the former single package
   `nvda-rdp-linux-git`. The Python BrlAPI module is in `python-brltty` and
   `pw-play` in `pipewire-audio`;
 * Debian forky (testing), amd64: the `.deb` files of a release:

@@ -41,6 +41,15 @@ sous NixOS (le module `services.nvda-rdp-server`, sur la VM de l'étude), Arch
 Linux et Debian forky. Les touches et la saisie braille depuis la plage du
 client, et les cas d'échec, ne sont pas couverts par les tests automatiques.
 
+Après les ajouts qui ont suivi la 0.4.0, l'usage quotidien depuis Windows avec
+NVDA, RDAccess, `mstsc` et une plage braille a confirmé l'affichage en braille
+abrégé, la saisie en braille abrégé et les réglages de la plage braille de
+NVDA, sans problème constaté. Les autres ajouts (`timeSinceInput`, plages de
+plusieurs lignes, gestes propres au modèle, voix de NVDA dans Orca, pause à
+une marque de phrase, icônes sonores, langues et pauses dans un message) sont
+couverts par les tests golden, mais n'ont pas tous été vérifiés en vraie
+session.
+
 ## Prérequis
 
 * GNOME 49 ou plus récent : GDM, GNOME Remote Desktop et Orca. Depuis
@@ -160,9 +169,9 @@ Desktop se configurent comme d'habitude (voir plus bas).
 
 ### Arch Linux
 
-`nvda-rdp-server-git` est construit par le PKGBUILD publié sur l'AUR
-(`packaging/arch/PKGBUILD`), avec n'importe quel assistant AUR ou avec
-`makepkg -si`.
+`nvda-rdp-server-git` se construit avec `makepkg` depuis
+`packaging/arch/` d'un clone du dépôt (voir
+[packaging.fr.md](packaging.fr.md)).
 
 ### Debian forky
 
@@ -400,6 +409,9 @@ peut manquer l'unité d'un processus bref. Les lignes des utilisateurs des
   présentée comme une ligne de toutes ses cellules, remplie rangée après
   rangée, comme RDAccess les envoie.
 * La lecture continue s'arrête à une déconnexion.
+* Verr. Maj. n'est pas synchronisé : le serveur ne répond pas à
+  `capsLockToggle` de RDAccess, donc l'état de Verr. Maj. de la session
+  distante et celui de Windows peuvent différer.
 
 ## Notes de conception tirées de l'étude
 

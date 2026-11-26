@@ -96,6 +96,8 @@ that Orca's speech and braille on the remote login screen reach the client
 and that the local login screen is unchanged. Manual tests from Windows with NVDA,
 RDAccess and `mstsc`, braille included, passed with this repository's
 packages on NixOS (`services.nvda-rdp-server`), Arch Linux and Debian forky.
+Daily use since 0.4.0 confirmed contracted braille output and typing and
+NVDA's braille display settings; Caps Lock is not synchronized.
 
 See [docs/server.md](docs/server.md) and `man nvda-rdp-server`.
 
@@ -104,12 +106,12 @@ See [docs/server.md](docs/server.md) and `man nvda-rdp-server`.
 | | Client | Server |
 | --- | --- | --- |
 | NixOS | `overlays.default`: `nvda-rdp-client`, `freerdp-with-nvda-rdp`, `remmina-with-nvda-rdp` | `nixosModules.server`: `services.nvda-rdp-server.enable` |
-| Arch Linux (AUR) | `nvda-rdp-client-git` | `nvda-rdp-server-git` |
+| Arch Linux (`makepkg`) | `nvda-rdp-client-git` | `nvda-rdp-server-git` |
 | Debian forky | `nvda-rdp-common`, `nvda-rdp-freerdp-plugin`, `nvda-rdp-client` | `nvda-rdp-common`, `nvda-rdp-server` |
 
-The AUR has the PKGBUILD only; the Debian packages are `.deb` files of the
-releases. Debian 13 is not supported. Building, testing in VMs, releasing,
-and other distributions: [docs/packaging.md](docs/packaging.md).
+On Arch Linux, the packages are built with `makepkg` from `packaging/arch/`;
+the Debian packages are `.deb` files of the releases. Debian 13 is not
+supported. Building, testing in VMs, releasing, and other distributions: [docs/packaging.md](docs/packaging.md).
 
 ## Credits
 

@@ -92,22 +92,28 @@ table follows the locale). They are skipped, not failed, where that locale is
 not installed; the build VMs generate it. Without the locale, the BrlAPI
 server falls back to the C locale with a warning, as Orca does.
 
-## Arch Linux: AUR
+## Arch Linux: PKGBUILD
 
-Only `packaging/arch/PKGBUILD` and `packaging/arch/.SRCINFO` are published on
-the AUR; users build the packages themselves. `nix run .#build-arch` only
-validates the PKGBUILD.
+The project is not on the AUR: users build the packages themselves with
+`makepkg` from `packaging/arch/` of a clone of the repository:
+
+```bash
+git clone https://github.com/pcressant/nvda-rdp-linux.git
+cd nvda-rdp-linux/packaging/arch
+makepkg -s
+sudo pacman -U nvda-rdp-common-git-*.pkg.tar.zst \
+  nvda-rdp-freerdp-plugin-git-*.pkg.tar.zst \
+  nvda-rdp-client-git-*.pkg.tar.zst    # client
+sudo pacman -U nvda-rdp-common-git-*.pkg.tar.zst \
+  nvda-rdp-server-git-*.pkg.tar.zst    # server
+```
 
 The PKGBUILD builds the default branch of the GitHub repository
-(`git+$url.git`). To release:
-
-1. push the changes to the default branch;
-2. if the PKGBUILD changed: run `nix run .#build-arch`, which builds the
-   working tree with the PKGBUILD's source replaced by a local copy, and copy
-   `dist/arch/SRCINFO` to `packaging/arch/.SRCINFO` when the build reports it
-   out of date;
-3. copy `PKGBUILD` and `.SRCINFO` to the AUR repository
-   `nvda-rdp-linux-git` and push it.
+(`git+$url.git`), not the clone's working tree. `nix run .#build-arch` only
+validates the PKGBUILD: it builds the working tree with the PKGBUILD's source
+replaced by a local copy. When the PKGBUILD changes, run it and copy
+`dist/arch/SRCINFO` to `packaging/arch/.SRCINFO` when the build reports it
+out of date, then push the changes to the default branch.
 
 `pkgver` is computed from Git: from the latest tag (`vX.Y.Z` gives
 `X.Y.Z.rN.gHASH`), or, while the repository has no tag, `0.4.0.rN.gHASH`; bump

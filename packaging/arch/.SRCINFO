@@ -1,6 +1,6 @@
 pkgbase = nvda-rdp-linux-git
 	pkgdesc = NVDA's RDAccess on Linux: remote speech and braille over RDP
-	pkgver = 0.4.0
+	pkgver = 0.5.0
 	pkgrel = 1
 	url = https://github.com/pcressant/nvda-rdp-linux
 	arch = x86_64
@@ -41,7 +41,7 @@ pkgname = nvda-rdp-freerdp-plugin-git
 pkgname = nvda-rdp-client-git
 	pkgdesc = NVDA's RDAccess on Linux: client for a remote NVDA's speech and braille
 	arch = any
-	depends = nvda-rdp-common-git=0.4.0-1
+	depends = nvda-rdp-common-git=0.5.0-1
 	depends = nvda-rdp-freerdp-plugin-git
 	depends = at-spi2-core
 	depends = brltty
@@ -62,7 +62,7 @@ pkgname = nvda-rdp-client-git
 
 pkgname = nvda-rdp-server-git
 	pkgdesc = NVDA's RDAccess on Linux: Orca's speech and braille for NVDA over GNOME Remote Desktop
-	depends = nvda-rdp-common-git=0.4.0-1
+	depends = nvda-rdp-common-git=0.5.0-1
 	depends = gdm
 	depends = glib2
 	depends = gnome-remote-desktop

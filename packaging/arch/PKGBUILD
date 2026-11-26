@@ -13,7 +13,7 @@ pkgname=(
   'nvda-rdp-server-git'
 )
 _pkgname=nvda-rdp-linux
-pkgver=0.4.0
+pkgver=0.5.0
 pkgrel=1
 pkgdesc="NVDA's RDAccess on Linux: remote speech and braille over RDP"
 arch=('x86_64' 'aarch64')
@@ -44,7 +44,7 @@ pkgver() {
   if git describe --long --tags >/dev/null 2>&1; then
     git describe --long --tags --abbrev=7 | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
   else
-    printf '0.4.0.r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+    printf '0.5.0.r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
   fi
 }
 

@@ -96,7 +96,7 @@ that Orca's speech and braille on the remote login screen reach the client
 and that the local login screen is unchanged. Manual tests from Windows with NVDA,
 RDAccess and `mstsc`, braille included, passed with this repository's
 packages on NixOS (`services.nvda-rdp-server`), Arch Linux and Debian forky.
-Daily use since 0.4.0 confirmed contracted braille output and typing and
+Daily use of 0.5.0 confirmed contracted braille output and typing and
 NVDA's braille display settings; Caps Lock is not synchronized.
 
 See [docs/server.md](docs/server.md) and `man nvda-rdp-server`.

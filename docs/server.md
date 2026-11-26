@@ -35,10 +35,10 @@ braille included, passed with these packages on NixOS (the
 forky. Braille keys and typing from the client's display, and failure cases,
 are not covered by the automated tests.
 
-After the additions that followed 0.4.0, daily use from Windows with NVDA,
-RDAccess, `mstsc` and one braille display confirmed contracted braille
-output, contracted braille typing, and NVDA's braille display settings, with
-no problem seen. The other additions (`timeSinceInput`, displays of several
+With the additions of 0.5.0, daily use from Windows with NVDA, RDAccess,
+`mstsc` and one braille display confirmed contracted braille output,
+contracted braille typing, and NVDA's braille display settings, with no
+problem seen. The other additions of 0.5.0 (`timeSinceInput`, displays of several
 rows, model-specific gestures, NVDA's voices in Orca, pause at a sentence
 mark, sound icons, languages and breaks within a message) are covered by the
 golden tests but have not each been checked in a real session.

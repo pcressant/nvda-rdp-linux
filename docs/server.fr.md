@@ -41,10 +41,10 @@ sous NixOS (le module `services.nvda-rdp-server`, sur la VM de l'étude), Arch
 Linux et Debian forky. Les touches et la saisie braille depuis la plage du
 client, et les cas d'échec, ne sont pas couverts par les tests automatiques.
 
-Après les ajouts qui ont suivi la 0.4.0, l'usage quotidien depuis Windows avec
-NVDA, RDAccess, `mstsc` et une plage braille a confirmé l'affichage en braille
+Avec les ajouts de la 0.5.0, l'usage quotidien depuis Windows avec NVDA,
+RDAccess, `mstsc` et une plage braille a confirmé l'affichage en braille
 abrégé, la saisie en braille abrégé et les réglages de la plage braille de
-NVDA, sans problème constaté. Les autres ajouts (`timeSinceInput`, plages de
+NVDA, sans problème constaté. Les autres ajouts de la 0.5.0 (`timeSinceInput`, plages de
 plusieurs lignes, gestes propres au modèle, voix de NVDA dans Orca, pause à
 une marque de phrase, icônes sonores, langues et pauses dans un message) sont
 couverts par les tests golden, mais n'ont pas tous été vérifiés en vraie

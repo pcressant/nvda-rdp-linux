@@ -1,3 +1,25 @@
+nvda-rdp-linux (0.5.0) unstable; urgency=medium
+
+  * Server: NVDA's driver settings, as RDAccess's remote driver: NVDA's
+    voices in Orca, and the new nvda-rdp-settings command to read and
+    change the settings of NVDA's synthesizer and braille display.
+  * Server: contracted braille typing with Orca's contraction table;
+    display gestures resolved in NVDA's order, model bindings included;
+    braille modifier toggles.
+  * Server: braille size from rows and columns; a removed display is
+    reported to Orca; a channel attaching again forgets the previous
+    client's attributes.
+  * Server: timeSinceInput answered on both channels from Mutter's idle
+    time.
+  * Server: pause at Speech Dispatcher's next sentence mark; sound icons
+    and Orca's capital icon played by NVDA; SSML languages and breaks
+    within a message.
+  * Client: Orca's words spoken in one message, without a pause between
+    words, when the server is this project's.
+  * Caps Lock is not synchronized by the server (documented).
+
+ -- Patrick Cressant <patrick.cressant@gmail.com>  Thu, 26 Nov 2026 22:43:14 +0100
+
 nvda-rdp-linux (0.4.0) unstable; urgency=medium
 
   * Braille between this project's client and server: the client pushes the

@@ -116,7 +116,7 @@ replaced by a local copy. When the PKGBUILD changes, run it and copy
 out of date, then push the changes to the default branch.
 
 `pkgver` is computed from Git: from the latest tag (`vX.Y.Z` gives
-`X.Y.Z.rN.gHASH`), or, while the repository has no tag, `0.4.0.rN.gHASH`; bump
+`X.Y.Z.rN.gHASH`), or, while the repository has no tag, `0.5.0.rN.gHASH`; bump
 that fallback and `pkgver=` together. The old single package
 `nvda-rdp-linux-git` is replaced by `nvda-rdp-freerdp-plugin-git` and
 `nvda-rdp-client-git`.

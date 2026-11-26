@@ -106,9 +106,9 @@ braille d'Orca sur l'écran de connexion à distance parviennent au client et
 que l'écran de connexion local n'est pas modifié. Des essais manuels depuis Windows, avec
 NVDA, RDAccess et `mstsc`, braille compris, ont réussi avec les paquets de ce
 dépôt sous NixOS (`services.nvda-rdp-server`), Arch Linux et Debian forky.
-L'usage quotidien depuis la 0.4.0 a confirmé l'affichage et la saisie en
-braille abrégé et les réglages de la plage braille de NVDA ; Verr. Maj. n'est
-pas synchronisé.
+L'usage quotidien de la 0.5.0 a confirmé l'affichage et la saisie en braille
+abrégé et les réglages de la plage braille de NVDA ; Verr. Maj. n'est pas
+synchronisé.
 
 Voir [docs/server.fr.md](docs/server.fr.md) et `man nvda-rdp-server`.
 

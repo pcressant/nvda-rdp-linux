@@ -130,7 +130,7 @@ puis pousser les modifications sur la branche par défaut.
 
 `pkgver` est calculé à partir de Git : depuis la dernière étiquette
 (`vX.Y.Z` donne `X.Y.Z.rN.gHASH`), ou, tant que le dépôt n'a pas
-d'étiquette, `0.4.0.rN.gHASH` ; changer cette valeur de repli et `pkgver=`
+d'étiquette, `0.5.0.rN.gHASH` ; changer cette valeur de repli et `pkgver=`
 ensemble. L'ancien paquet unique `nvda-rdp-linux-git` est remplacé par
 `nvda-rdp-freerdp-plugin-git` et `nvda-rdp-client-git`.
 
